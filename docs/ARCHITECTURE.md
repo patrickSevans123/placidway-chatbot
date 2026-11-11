@@ -58,7 +58,8 @@ changed them.
 | `app/llm.py` | OpenAI-compatible chat client with fallback models and a bounded timeout |
 | `app/ratelimit.py` | Per-IP sliding window over the two routes that cost money |
 | `app/db.py` | SQLite: sessions, messages, leads, feedback, unanswered log, stats |
-| `web/` | Static page: chat UI, source cards, lead form |
+| `frontend/` | Next.js 16 static export: the shipped UI. Brand values from `docs/BRAND.md`, components in `app/components/`, styles in `app/globals.css` (tokens) and `app/ui.css` |
+| `web/` | The original no-build UI, kept as the fallback when `frontend/out` is absent |
 
 ## Where two limits live
 
