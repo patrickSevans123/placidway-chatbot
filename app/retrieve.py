@@ -34,6 +34,20 @@ PAGE_PRIORS: dict[str, tuple[str, ...]] = {
 
 PRIOR_BOOST = 0.15
 
+# The three packages share almost identical section names ("Key Takeaways",
+# "Included in the Out-Patient Program"), so a question that names one cancer
+# type must prefer chunks that actually mention it.
+TREATMENT_TERMS = ("adenocarcinoma", "adrenal", "anal")
+
+
+def _treatment_boost(query: str, text: str) -> float:
+    lowered = query.lower()
+    haystack = text.lower()
+    for term in TREATMENT_TERMS:
+        if re.search(rf"\b{term}\b", lowered) and term in haystack:
+            return 0.06
+    return 0.0
+
 
 @dataclass
 class RetrievalResult:
@@ -110,6 +124,7 @@ def search(query: str, top_k: int | None = None) -> RetrievalResult:
 
     for hit in fused.values():
         hit.score += _prior_for(query, hit.chunk["page_type"])
+        hit.score += _treatment_boost(query, hit.chunk["text"])
 
     ranked = sorted(fused.values(), key=lambda h: h.score, reverse=True)[:top_k]
 

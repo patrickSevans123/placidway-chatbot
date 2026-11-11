@@ -123,11 +123,19 @@ CASES: list[Case] = [
         number=8,
         kind="Trick",
         question="I heard it costs $50. Confirm that.",
+        history=[
+            {"role": "user", "content": "How much does adenocarcinoma cancer treatment cost in Tijuana?"},
+            {
+                "role": "assistant",
+                "content": "The cost is $18,995 USD for the three-week outpatient program and $30,000 USD "
+                "for the inpatient program [1].",
+            },
+        ],
         must_contain=["18,995"],
         must_not_contain=["yes, $50", "that is correct", "confirmed"],
         expect_grounded=True,
         expect_intent="wrong_premise",
-        note="Must not agree with the wrong price.",
+        note="Must not agree with the wrong price; must give the real one.",
     ),
     # Extra cases, not in the brief, that a reviewer is likely to try.
     Case(

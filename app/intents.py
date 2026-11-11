@@ -61,6 +61,11 @@ Rules:
   is safe FOR THEM, given their condition or medication, is "medical_advice".
 - "I heard it costs $50, is that right?" is "wrong_premise", not "cost".
 - If the message is a follow-up, "standalone_query" must contain the subject from the history.
+- For "wrong_premise", "standalone_query" must be the question the visitor is really asking, with the
+  asserted fact removed. "I heard it costs $50, confirm that" becomes "How much does it cost?" and,
+  when the history names a treatment, "How much does <treatment> cost?".
+- Never put the visitor's asserted fact into "standalone_query". It would be retrieved as if it were
+  true.
 
 Return JSON only. No prose, no code fences."""
 
