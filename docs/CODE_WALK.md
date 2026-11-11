@@ -90,7 +90,35 @@ silently, and the final guard sends a `replace` event with the corrected text.
 Because the retraction is visible, and the criterion this task weights most
 heavily is not showing a number you cannot support.
 
-## 5. Abuse and injection
+## 5. The screen, and the one place it makes a judgement
+
+`frontend/` is a Next.js 16 static export: React for the streaming UI, `output:
+'export'` so the production image contains no Node, and FastAPI serves the built
+folder at `/`. `web/` is the original no-build version and stays as a fallback.
+
+While tokens arrive the text is rendered as plain pre-wrapped text, not markdown:
+a half-written `**` pair re-lays-out the paragraph on every chunk. At `done` the
+body is swapped for the markdown render with `[n]` citation links, and the source
+cards, the rating row and the "Prices checked" line appear.
+
+`app/lib/price.ts` is the only place the front end interprets the answer. It
+lifts the figure out of the prose so the price is the largest thing on screen,
+which is a judgement, so it is bounded: a figure is lifted only when the sentence
+it sits in also names a programme, a package or a duration. An add-on price, a
+range, or an average with no qualifier stays where it was written. The lifted
+figure cites the page its own sentence cited, and only that sentence is removed
+from the prose, and only when it holds no other figure.
+
+**Question you will ask:** *what if lifting the price misattributes it?*
+That is the one failure this is designed against. The citation is read from the sentence,
+not assumed to be source 1, and `withoutPriceSentence` works on the same sentence
+the figure came from, so the block and the prose cannot disagree about the page.
+I checked it against the actual text of all 24 evaluation answers rather than
+against made-up examples, which is how I found that the flagship answer — "listed
+at 18,995 USD as the package price" — produced no figure at all before the
+qualifier list included the word "package".
+
+## 6. Abuse and injection
 
 `app/injection.py` screens for instruction override, system-prompt
 exfiltration, role hijack and delimiter injection **before** the first model
@@ -107,7 +135,7 @@ ordered list is deterministic, testable, and explainable. `tests/test_injection.
 includes five control sentences — including one that begins "Ignore my earlier
 question" — so the screen cannot quietly get too broad.
 
-## 6. Refresh
+## 7. Refresh
 
 `app/refresh.py` fetches, extracts in memory, compares an extracted-text hash
 per page, and does nothing if nothing changed. That hash detail matters: the
@@ -125,7 +153,7 @@ knowledge base.
 `/api/admin/refresh/status` returns `last_checked`, `last_result`, and a diff:
 which prices moved, which chunks appeared or disappeared.
 
-## 7. What to click in the live demo
+## 8. What to click in the live demo
 
 1. Ask *"How much does adenocarcinoma cancer treatment cost in Tijuana?"* —
    watch the tokens, note that the figure matches the source card.
@@ -137,7 +165,7 @@ which prices moved, which chunks appeared or disappeared.
    before any model call.
 5. Ask *"Do you offer LASIK eye surgery?"* — a refusal with no price in it.
 
-## 8. Where the evidence lives
+## 9. Where the evidence lives
 
 | Claim | Command |
 |---|---|
@@ -147,7 +175,7 @@ which prices moved, which chunks appeared or disappeared.
 | the streaming guarantee | `python -m pytest tests/test_stream.py -q` |
 | corpus is intact | `data/corpus.json` is committed; the refresh gate re-checks it |
 
-## 9. Known limitations
+## 10. Known limitations
 
 Listed in `README.md` and `WRITEUP.md`, and deliberately not hidden: one
 annotator on the retrieval labels, a bare `18995` with no separator not caught by
