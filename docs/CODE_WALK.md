@@ -96,6 +96,28 @@ heavily is not showing a number you cannot support.
 'export'` so the production image contains no Node, and FastAPI serves the built
 folder at `/`. `web/` is the original no-build version and stays as a fallback.
 
+The screen is built from PlacidWay's own values rather than from a design that
+merely looks tidy. `docs/BRAND.md` records where each one came from: coral
+`#e85a4f` for the single accent, their system font stack, 10 px radius on the
+primary control, `#e0e0e0` hairlines doing the separating instead of shadows,
+`#222`/`#333` ink, and the price printed the way their package page prints it —
+the figure, then a quiet qualifier beside it. Their accreditations row has no
+honest equivalent here, so that position holds what is true instead: which seven
+pages the answers come from.
+
+Two things are deliberately not brand. There is no avatar and no persona name:
+their own assistant is a person called Alice, and this one answers from seven
+documents and says when they do not cover something, so a face would promise a
+person who is not there. And there is no photography, because a destination photo
+would compete with the answer.
+
+It is prose, not chat bubbles. A bubble says "messages"; this is a reading of
+seven pages, and the answer has to sit at a readable measure with citations
+attached to the sentence they support. Suggested questions are buttons that
+submit themselves, the page never yanks your position while text streams, and the
+composer is fixed with the scroll container padded by its measured height so no
+answer ends underneath it.
+
 While tokens arrive the text is rendered as plain pre-wrapped text, not markdown:
 a half-written `**` pair re-lays-out the paragraph on every chunk. At `done` the
 body is swapped for the markdown render with `[n]` citation links, and the source
@@ -117,6 +139,14 @@ I checked it against the actual text of all 24 evaluation answers rather than
 against made-up examples, which is how I found that the flagship answer — "listed
 at 18,995 USD as the package price" — produced no figure at all before the
 qualifier list included the word "package".
+
+**Question you will ask:** *why does a citation marker get its own paragraph?*
+Because the citation carries the whole claim of the product, so it is measured
+rather than eyeballed. A marker is glued to the word before it with a word joiner
+and set `inline`; as an `inline-block` Chrome breaks the line before it, which
+rendered a refusal answer as "…to $30,000" / a lone raised "1" / ". For a dental
+implant quote". Four answers now render with zero split markers at 1280 px,
+measured by comparing each marker's box against the word before it.
 
 ## 6. Abuse and injection
 

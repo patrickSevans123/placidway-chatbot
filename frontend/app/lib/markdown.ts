@@ -75,6 +75,14 @@ const INLINE = /(\*\*[^*]+\*\*)|(\[(\d{1,2})\])/g;
 
 // A marker only becomes a link when a source with that position exists.
 // Otherwise it stays as typed instead of pointing at nothing.
+//
+// The models write "price [1]." with a space before the marker. The marker is
+// set raised, so that space shows up as a gap before the full stop. The space is
+// replaced with a word joiner (U+2060) rather than deleted: no visible gap, but
+// the line breaker still cannot separate the marker from the word it belongs to.
+// Without it, a long answer wraps as "…to $30,000" / "1 ." on the next line.
+const JOINT = "\u2060";
+
 export function parseInline(text: string, sourceCount: number): Inline[] {
   const out: Inline[] = [];
   let last = 0;
@@ -85,7 +93,21 @@ export function parseInline(text: string, sourceCount: number): Inline[] {
       out.push({ kind: "bold", text: m[1].slice(2, -2) });
     } else {
       const n = Number(m[3]);
-      out.push(n >= 1 && n <= sourceCount ? { kind: "cite", n } : { kind: "text", text: m[0] });
+      if (n >= 1 && n <= sourceCount) {
+        const before = out[out.length - 1];
+        if (before && before.kind === "text") {
+          const trimmed = before.text.replace(/[ \t]+$/, "");
+          if (trimmed) {
+            const glued = trimmed.length === before.text.length ? trimmed : trimmed + JOINT;
+            out[out.length - 1] = { kind: "text", text: glued };
+          } else {
+            out.pop();
+          }
+        }
+        out.push({ kind: "cite", n });
+      } else {
+        out.push({ kind: "text", text: m[0] });
+      }
     }
     last = at + m[0].length;
   }

@@ -1,0 +1,1397 @@
+/* ==========================================================================
+   Components. Tokens and the page ground are in globals.css.
+
+   One thing is the hero of a price answer: the figure. It is the only thing at
+   display size and 700 weight, and its qualifier sits beside it at 14px in
+   muted grey, as the package page prints it. Nothing on the panel is tinted,
+   gradient, shadowed or rounded beyond 4px; a hairline does the separating.
+   ========================================================================== */
+
+.panel {
+  border: 1px solid var(--hair);
+  border-radius: var(--r-card);
+  background: var(--surface);
+}
+
+/* ---------- Header ---------- */
+
+.top {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  background: var(--surface);
+  border-bottom: 1px solid var(--hair);
+}
+
+.top-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  max-width: var(--page);
+  margin: 0 auto;
+  padding: 0 var(--gutter);
+  height: 60px;
+}
+
+.brand {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 12px;
+  min-width: 0;
+}
+
+.brand-name {
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--coral);
+}
+
+.brand-rule {
+  width: 1px;
+  height: 14px;
+  background: var(--hair-strong);
+  align-self: center;
+  flex: none;
+}
+
+.brand-sub {
+  font-size: 14px;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.top-actions {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  flex: none;
+}
+
+.top-new {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--body);
+}
+
+.top-new:hover {
+  color: var(--coral-ink);
+}
+
+.top-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 44px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--body);
+  text-decoration: underline;
+  text-decoration-color: var(--hair-strong);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 4px;
+}
+
+.top-link:hover {
+  color: var(--coral-ink);
+  text-decoration-color: currentColor;
+}
+
+.arrow {
+  width: 1em;
+  height: 1em;
+  flex: none;
+}
+
+.top-link .tiny {
+  width: 12px;
+  height: 12px;
+}
+
+/* ---------- Page frame ---------- */
+
+.page {
+  max-width: var(--page);
+  margin: 0 auto;
+  padding: 32px var(--gutter) 40px;
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 40px;
+}
+
+.column {
+  min-width: 0;
+}
+
+@media (min-width: 1040px) {
+  .layout {
+    grid-template-columns: minmax(0, 1fr) 300px;
+    gap: 56px;
+    align-items: start;
+  }
+}
+
+/* ---------- Empty state: headline over a row of bordered cards ---------- */
+
+.intro-title {
+  font-size: 26px;
+  font-weight: 700;
+  line-height: 1.25;
+  letter-spacing: -0.015em;
+  color: var(--ink);
+}
+
+.intro-lede {
+  margin-top: 8px;
+  max-width: 56ch;
+  font-size: 16px;
+  line-height: 1.55;
+  color: var(--muted);
+}
+
+.empty {
+  margin-top: 24px;
+}
+
+.starters {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 12px;
+  margin-top: 16px;
+}
+
+@media (min-width: 680px) {
+  .starters {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.starter {
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr) 16px;
+  align-items: start;
+  gap: 0 12px;
+  width: 100%;
+  height: 100%;
+  min-height: 84px;
+  padding: 16px;
+  text-align: left;
+  background: var(--surface);
+  border: 1px solid var(--hair);
+  border-radius: 10px;
+  transition: border-color 140ms ease, background-color 140ms ease;
+}
+
+.starter:hover {
+  border-color: var(--coral);
+  background: var(--coral-wash);
+}
+
+.starter-icon {
+  color: var(--faint);
+  transition: color 140ms ease;
+}
+
+.starter:hover .starter-icon {
+  color: var(--coral-ink);
+}
+
+.icon {
+  width: 24px;
+  height: 24px;
+}
+
+.starter-body {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.starter-q {
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+
+.starter-note {
+  font-size: var(--t-small);
+  line-height: 1.45;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+
+.starter-arrow {
+  width: 16px;
+  height: 16px;
+  margin-top: 3px;
+  color: var(--hair-strong);
+  transition: color 140ms ease, transform 160ms ease;
+}
+
+.starter:hover .starter-arrow {
+  color: var(--coral);
+  transform: translateX(2px);
+}
+
+/* ---------- A question and its answer ---------- */
+
+.turns {
+  display: grid;
+  gap: 40px;
+}
+
+.turn + .turn {
+  padding-top: 32px;
+  border-top: 1px solid var(--hair);
+}
+
+.turn-question {
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.45;
+  color: var(--faint);
+  max-width: var(--read);
+  overflow-wrap: anywhere;
+}
+
+.turn-question::before {
+  content: "You asked";
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--faint);
+  margin-bottom: 2px;
+}
+
+.turn > * + * {
+  margin-top: 14px;
+}
+
+/* ---------- Streaming stage ---------- */
+
+.stage {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 20px;
+  font-size: 14px;
+  color: var(--muted);
+}
+
+.stage-track {
+  display: inline-flex;
+  gap: 4px;
+  flex: none;
+}
+
+.stage-step {
+  width: 20px;
+  height: 3px;
+  border-radius: 2px;
+  background: var(--hair);
+  transition: background-color 240ms ease;
+}
+
+.stage-step[data-state="done"] {
+  background: var(--coral-ink);
+}
+
+.stage-step[data-state="now"] {
+  background: var(--coral);
+}
+
+.waiting {
+  font-size: 16px;
+  color: var(--faint);
+}
+
+/* ---------- Prose: the answer reads as a document ---------- */
+
+.prose {
+  max-width: var(--read);
+  font-size: var(--t-body);
+  line-height: 1.6;
+  color: var(--body);
+  overflow-wrap: break-word;
+  text-wrap: pretty;
+}
+
+.prose > * + * {
+  margin-top: 12px;
+}
+
+.prose strong {
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.prose ul,
+.prose ol.steps {
+  display: grid;
+  gap: 6px;
+}
+
+.prose ul li {
+  position: relative;
+  padding-left: 18px;
+}
+
+.prose ul li::before {
+  content: "";
+  position: absolute;
+  left: 2px;
+  top: 0.85em;
+  width: 6px;
+  height: 1px;
+  background: var(--faint);
+}
+
+.prose ol.steps {
+  counter-reset: step;
+}
+
+.prose ol.steps li {
+  counter-increment: step;
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr);
+  gap: 6px;
+}
+
+.prose ol.steps li::before {
+  content: counter(step) ".";
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--coral-ink);
+  font-variant-numeric: tabular-nums;
+  padding-top: 1px;
+}
+
+.prose-stream {
+  white-space: pre-wrap;
+}
+
+/* ---------- Citations ---------- */
+
+/* A real link at every size: raised, coral-ink so small glyphs pass AA, and with
+   an underline on hover and focus so the affordance is not colour alone. The
+   padding is what makes the 11px glyph a tappable target, so the negative
+   margins pull the box back to the word it follows: "price1." reads tight. */
+.cite {
+  display: inline-block;
+  min-width: 16px;
+  padding: 0 0 0 1px;
+  margin: 0 -0.06em 0 0;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.5;
+  vertical-align: super;
+  white-space: nowrap;
+  color: var(--coral-ink);
+  border-radius: 3px;
+  text-decoration: underline;
+  text-decoration-color: transparent;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 2px;
+  transition: background-color 120ms ease, color 120ms ease;
+}
+
+/* A marker sits tight against the word it follows and tight against the full
+   stop after it: the padding is cancelled by a matching negative margin so
+   "price1." has no double gap, while the glyph still has its own few pixels.
+
+   It must be `inline`, not `inline-block`. An inline-block is an atomic box, and
+   Chrome will break the line before one: a long answer wrapped as "…to $30,000"
+   then a lone raised "1" on the next line, then ". For a dental implant quote".
+   Measured at 1280; `display: inline` removes the break and keeps the tight
+   spacing. */
+.prose a.cite {
+  display: inline;
+  padding: 0 1px;
+  margin: 0 -1px;
+  letter-spacing: -0.2px;
+}
+
+.cite:hover,
+.cite:focus-visible {
+  color: var(--coral-deep);
+  background: var(--coral-wash);
+  text-decoration-color: currentColor;
+}
+
+/* ---------- Price: the hero of a price answer ---------- */
+
+.price {
+  border: 1px solid var(--hair);
+  border-radius: var(--r-card);
+  padding: 18px 20px 12px;
+  background: var(--surface);
+  max-width: var(--read);
+}
+
+.price-qualifier {
+  font-size: 14px;
+  line-height: 1.4;
+  color: var(--muted);
+}
+
+.price-figure {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 0 8px;
+}
+
+.price-amount {
+  font-size: 40px;
+  font-weight: 700;
+  line-height: 1.05;
+  letter-spacing: -0.025em;
+  color: var(--ink);
+}
+
+.price-currency {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+}
+
+.price-cite {
+  vertical-align: baseline;
+  font-size: 11px;
+}
+
+.price-from {
+  margin-top: 6px;
+  font-size: var(--t-small);
+  line-height: 1.45;
+  color: var(--muted);
+}
+
+.price-from-page {
+  color: var(--body);
+}
+
+.price-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 44px;
+  margin-top: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--muted);
+}
+
+/* Coral is kept for the figure's own citation and the actions that leave the
+   page. This disclosure is grey, with a coral chevron, so it cannot compete with
+   the number it sits under. */
+.price-toggle .chevron {
+  color: var(--coral-ink);
+}
+
+.price-toggle:hover {
+  color: var(--ink);
+}
+
+.chevron {
+  width: 16px;
+  height: 16px;
+  transition: transform 160ms ease;
+}
+
+.chevron.is-open {
+  transform: rotate(180deg);
+}
+
+/* ---------- Answer footer: copy, rating, provenance ---------- */
+
+.answer-foot {
+  max-width: var(--read);
+  display: grid;
+  gap: 10px;
+}
+
+.answer-tools {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+  min-height: 44px;
+}
+
+.tool {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  padding: 0 10px 0 0;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--muted);
+}
+
+.tool:hover {
+  color: var(--ink);
+}
+
+.copy-icon {
+  width: 16px;
+  height: 16px;
+}
+
+.rate-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.rate-question {
+  font-size: 14px;
+  color: var(--muted);
+  margin-right: 2px;
+}
+
+.rate {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border: 1px solid var(--hair);
+  border-radius: var(--r-control);
+  color: var(--body);
+  transition: border-color 120ms ease, color 120ms ease, background-color 120ms ease;
+}
+
+.rate:hover:not(:disabled) {
+  border-color: var(--hair-strong);
+  color: var(--ink);
+}
+
+.rate[aria-pressed="true"] {
+  border-color: var(--coral);
+  background: var(--coral-wash);
+  color: var(--coral-deep);
+}
+
+.rate:disabled:not([aria-pressed="true"]) {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.thumb {
+  width: 18px;
+  height: 18px;
+}
+
+.rate-note {
+  font-size: var(--t-small);
+  color: var(--muted);
+}
+
+.provenance {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+  font-size: var(--t-small);
+  color: var(--muted);
+}
+
+.provenance-sep {
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: var(--hair-strong);
+}
+
+.corrected {
+  max-width: var(--read);
+  padding: 10px 14px;
+  font-size: var(--t-small);
+  line-height: 1.5;
+  color: var(--muted);
+  background: var(--wash-2);
+  border-left: 2px solid var(--hair-strong);
+  border-radius: 0 var(--r-card) var(--r-card) 0;
+}
+
+/* The quiet line that says the text was checked, in the place their
+   "Medically reviewed by …" line sits on a package page. */
+.checked-line {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  max-width: var(--read);
+  font-size: var(--t-small);
+  line-height: 1.5;
+  color: var(--muted);
+}
+
+.checked-mark {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--coral);
+  flex: none;
+}
+
+/* ---------- Sources: their "About Package" panel ---------- */
+
+.sources {
+  max-width: var(--read);
+  border: 1px solid var(--hair);
+  border-radius: var(--r-card);
+}
+
+.panel-head {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--hair);
+}
+
+.panel-title {
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.3;
+  color: var(--ink);
+}
+
+.source-list {
+  display: grid;
+}
+
+/* Every level of this chain is a grid item, and a grid item defaults to
+   min-width:auto, so one long URL would widen the whole page on a phone. */
+.source-list,
+.source,
+.source-link {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.source + .source {
+  border-top: 1px solid var(--hair);
+}
+
+.source-link {
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr);
+  gap: 10px;
+  padding: 12px 16px;
+  border-radius: 0;
+  transition: background-color 200ms ease;
+}
+
+.source-link:hover {
+  background: var(--wash-2);
+}
+
+.source-link:hover .source-title {
+  color: var(--coral-deep);
+}
+
+.source-num {
+  font-size: var(--t-small);
+  font-weight: 600;
+  line-height: 1.5;
+  color: var(--faint);
+}
+
+.source-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 3px;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.source-title {
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--ink);
+  min-width: 0;
+  overflow-wrap: anywhere;
+  text-decoration: underline;
+  text-decoration-color: var(--hair-strong);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+  transition: color 140ms ease;
+}
+
+.inline-arrow {
+  display: inline-block;
+  width: 11px;
+  height: 11px;
+  margin-left: 4px;
+  color: var(--faint);
+}
+
+.source-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 2px 8px;
+}
+
+.source-type {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--muted);
+  border: 1px solid var(--hair);
+  border-radius: 2px;
+  padding: 0 5px;
+  line-height: 1.6;
+  white-space: nowrap;
+}
+
+.source-url {
+  font-size: var(--t-small);
+  line-height: 1.45;
+  color: var(--faint);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+}
+
+/* Clicking a [n] lights the card. The pulse is a background tint plus a coral
+   left edge: no glow, no movement. */
+.source.is-lit {
+  animation: lit 2400ms ease-out 1;
+}
+
+.source.is-lit .source-link {
+  background: var(--coral-wash);
+  box-shadow: inset 3px 0 0 var(--coral);
+}
+
+/* Works without JavaScript too, because the citation is a real #source-N link. */
+.source:target {
+  background: var(--coral-wash);
+  box-shadow: inset 3px 0 0 var(--coral);
+}
+
+@keyframes lit {
+  0%,
+  70% {
+    background: var(--coral-wash);
+  }
+  100% {
+    background: transparent;
+  }
+}
+
+/* ---------- Notices: stopped, failed, limited ---------- */
+
+.notice {
+  max-width: var(--read);
+  padding: 16px 18px;
+  border: 1px solid var(--hair);
+  border-radius: var(--r-card);
+  background: var(--surface);
+}
+
+.notice-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.notice-text {
+  margin-top: 4px;
+  font-size: 15px;
+  line-height: 1.55;
+  color: var(--muted);
+}
+
+.notice-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.notice .button {
+  margin-top: 12px;
+}
+
+.notice-actions .button {
+  margin-top: 0;
+}
+
+/* ---------- Refusal ---------- */
+
+.refusal {
+  max-width: var(--read);
+  padding: 16px 18px;
+  border: 1px solid var(--hair);
+  border-left: 3px solid var(--ink);
+  border-radius: var(--r-card);
+}
+
+.refusal-lead {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+
+.refusal-text {
+  margin-top: 6px;
+  font-size: 16px;
+  line-height: 1.6;
+  color: var(--body);
+}
+
+.refusal-help {
+  margin-top: 6px;
+  font-size: 15px;
+  line-height: 1.55;
+  color: var(--muted);
+}
+
+.refusal .button {
+  margin-top: 14px;
+}
+
+/* ---------- Buttons ---------- */
+
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 18px;
+  border-radius: var(--r-control);
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.2;
+  transition: background-color 140ms ease, color 140ms ease, border-color 140ms ease;
+}
+
+.button-solid {
+  background: var(--coral);
+  color: #fff;
+}
+
+.button-solid:hover {
+  background: var(--coral-ink);
+}
+
+.button-quiet {
+  border: 1px solid var(--hair-strong);
+  color: var(--body);
+  background: var(--surface);
+}
+
+.button-quiet:hover {
+  border-color: var(--faint);
+  color: var(--ink);
+}
+
+.button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+/* ---------- Quote form ---------- */
+
+.quote-open {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--coral-ink);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 4px;
+}
+
+.quote-open:hover {
+  color: var(--coral-deep);
+}
+
+.quote-sent {
+  font-size: 15px;
+  line-height: 1.55;
+  color: var(--body);
+  padding: 12px 16px;
+  border: 1px solid var(--hair);
+  border-left: 3px solid var(--coral);
+  border-radius: var(--r-card);
+}
+
+.quote {
+  max-width: var(--read);
+  padding: 16px 18px 18px;
+  border: 1px solid var(--hair);
+  border-radius: var(--r-card);
+  background: var(--wash-2);
+}
+
+.quote-lead {
+  font-size: 15px;
+  line-height: 1.55;
+  color: var(--body);
+}
+
+.quote-form {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 12px;
+  margin-top: 14px;
+}
+
+@media (min-width: 620px) {
+  .quote-form {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .quote-field-wide,
+  .quote-actions,
+  .quote-note,
+  .field-problem {
+    grid-column: 1 / -1;
+  }
+}
+
+.quote-field {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.quote-field label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.optional {
+  font-weight: 400;
+  color: var(--faint);
+}
+
+.quote-field input,
+.quote-field textarea {
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 12px;
+  background: var(--surface);
+  border: 1px solid var(--hair-strong);
+  border-radius: 6px;
+  font-size: 16px; /* 16px stops iOS zooming the page on focus */
+  line-height: 1.4;
+  color: var(--body);
+  resize: vertical;
+}
+
+.quote-field input:focus-visible,
+.quote-field textarea:focus-visible {
+  outline: 2px solid var(--coral-ink);
+  outline-offset: 0;
+  border-color: var(--coral-ink);
+}
+
+.quote-field input[aria-invalid="true"] {
+  border-color: var(--coral-deep);
+}
+
+.quote-field input::placeholder {
+  color: var(--faint);
+}
+
+.quote-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+
+.quote-close {
+  min-height: 44px;
+  padding: 0 8px;
+  font-size: 14px;
+  color: var(--muted);
+}
+
+.quote-close:hover {
+  color: var(--ink);
+}
+
+.quote-note {
+  font-size: var(--t-small);
+  line-height: 1.5;
+  color: var(--muted);
+}
+
+.field-problem {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--coral-deep);
+}
+
+/* ---------- Trust line, where their accreditations row sits ---------- */
+
+.trust {
+  margin-top: 40px;
+  padding-top: 20px;
+  border-top: 1px solid var(--hair);
+}
+
+.trust-line {
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--muted);
+}
+
+/* ---------- Guide panel (the right column) ---------- */
+
+.guide {
+  display: none;
+}
+
+@media (min-width: 1040px) {
+  .guide {
+    display: block;
+    border: 1px solid var(--hair);
+    border-radius: var(--r-card);
+    position: sticky;
+    top: 80px;
+  }
+}
+
+.guide-body {
+  padding: 14px 16px;
+}
+
+.guide-text {
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--muted);
+}
+
+.guide-pages {
+  display: grid;
+  margin-top: 12px;
+  border-top: 1px solid var(--hair);
+}
+
+.guide-pages li {
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr);
+  gap: 8px;
+  padding: 7px 0;
+  border-bottom: 1px solid var(--hair);
+}
+
+.guide-pages li:last-child {
+  border-bottom: 0;
+}
+
+.guide-num {
+  font-size: 12px;
+  color: var(--faint);
+  padding-top: 1px;
+}
+
+.guide-page {
+  display: grid;
+  gap: 0;
+  min-width: 0;
+}
+
+.guide-page-title {
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--ink);
+}
+
+.guide-page-note {
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--faint);
+}
+
+.panel-foot {
+  padding: 12px 16px;
+  border-top: 1px solid var(--hair);
+}
+
+.guide-note {
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--muted);
+}
+
+/* ---------- Composer: a fixed field at the bottom ---------- */
+
+.composer-dock {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 40;
+  background: var(--surface);
+  border-top: 1px solid var(--hair);
+  padding: 10px var(--gutter) max(10px, env(safe-area-inset-bottom));
+}
+
+.composer,
+.composer-hint {
+  max-width: calc(var(--page) - var(--gutter) * 2);
+  margin: 0 auto;
+}
+
+.composer {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  padding: 6px 6px 6px 14px;
+  background: var(--surface);
+  border: 1px solid var(--hair-strong);
+  border-radius: var(--r-control);
+  transition: border-color 140ms ease, box-shadow 140ms ease;
+}
+
+.composer:focus-within {
+  border-color: var(--coral-ink);
+  box-shadow: 0 0 0 3px var(--coral-wash);
+}
+
+.composer textarea {
+  flex: 1;
+  min-width: 0;
+  max-height: 148px;
+  min-height: 44px;
+  padding: 11px 0;
+  border: 0;
+  outline: none;
+  resize: none;
+  background: transparent;
+  font-size: 16px; /* no zoom on focus in iOS */
+  line-height: 1.45;
+  color: var(--body);
+  overflow-y: auto;
+}
+
+.composer textarea::placeholder {
+  color: var(--faint);
+}
+
+.composer textarea:read-only {
+  color: var(--muted);
+}
+
+/* Their hero CTA: coral fill, white 18px/600 label, 10px radius. */
+.composer-button {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 44px;
+  padding: 0 20px;
+  border-radius: var(--r-control);
+  background: var(--coral);
+  color: #fff;
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 1;
+  transition: background-color 140ms ease, opacity 140ms ease;
+}
+
+.composer-button:hover:not(:disabled) {
+  background: var(--coral-ink);
+}
+
+.composer-arrow {
+  width: 16px;
+  height: 16px;
+  transition: transform 160ms ease;
+}
+
+.composer-button:hover:not(:disabled) .composer-arrow {
+  transform: translateX(2px);
+}
+
+/* Disabled keeps the brand colour. A grey slab was the first thing on the page
+   before anyone typed, and it made the only primary action read as dead; a
+   washed coral with deep-coral text still reads as "not yet" while the one
+   accent stays on screen. */
+.composer-button:disabled {
+  background: #fdeceb;
+  color: var(--coral-deep);
+  box-shadow: inset 0 0 0 1px #f6d5d2;
+  cursor: not-allowed;
+}
+
+.composer-button:disabled:hover {
+  background: #fdeceb;
+}
+
+.composer-stop {
+  background: var(--surface);
+  color: var(--ink);
+  border: 1px solid var(--hair-strong);
+  font-size: 16px;
+}
+
+.composer-stop:hover:not(:disabled) {
+  background: var(--wash-2);
+}
+
+.stop-icon {
+  width: 12px;
+  height: 12px;
+  color: var(--coral-ink);
+}
+
+.composer-hint {
+  margin-top: 6px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--muted);
+}
+
+kbd {
+  display: inline-block;
+  padding: 0 4px;
+  border: 1px solid var(--hair);
+  border-radius: 3px;
+  background: var(--wash-2);
+  font-family: var(--font);
+  font-size: 11px;
+  color: var(--body);
+}
+
+@media (max-width: 600px) {
+  .composer-hint {
+    display: none;
+  }
+
+  .composer-button {
+    padding: 0 18px;
+    font-size: 17px;
+  }
+}
+
+/* ---------- Footer ---------- */
+
+.foot {
+  margin-top: 40px;
+  padding-top: 16px;
+  border-top: 1px solid var(--hair);
+}
+
+.foot-line {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: var(--t-small);
+  color: var(--muted);
+}
+
+.status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--hair-strong);
+  flex: none;
+}
+
+.status-ok {
+  background: var(--coral);
+}
+
+/* ---------- Narrow screens ---------- */
+
+/* On a phone the label is dropped: the wordmark plus two actions already fill
+   the bar, and "New question" sat on top of the label. */
+@media (max-width: 600px) {
+  .brand-rule,
+  .brand-sub {
+    display: none;
+  }
+
+  .top-inner {
+    padding: 0 var(--gutter);
+  }
+
+  .top-actions {
+    gap: 14px;
+  }
+
+  .top-new,
+  .top-link {
+    font-size: 13px;
+  }
+}
+
+@media (max-width: 600px) {
+  .intro-title {
+    font-size: 22px;
+  }
+
+  .price {
+    padding: 14px 16px 10px;
+  }
+
+  .price-amount {
+    font-size: 32px;
+  }
+
+  .turn + .turn {
+    padding-top: 24px;
+  }
+
+  .turns {
+    gap: 32px;
+  }
+}
+
+/* Every animation is off under reduced motion. The citation still lights, it
+   just does not fade. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+
+  .source.is-lit {
+    animation: none;
+  }
+}
+
+@media print {
+  .top,
+  .composer-dock,
+  .guide,
+  .trust,
+  .answer-tools,
+  .skip {
+    display: none !important;
+  }
+}

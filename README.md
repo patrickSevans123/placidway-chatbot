@@ -54,13 +54,19 @@ Mistral (the default), OpenAI, Groq, Together, Ollama, vLLM, or a router.
 
 The front end is a Next.js static export. `app/main.py` serves `frontend/out` when it exists and
 falls back to the original no-build `web/` when it does not, so the API works before the front end
-has ever been built:
+has ever been built.
+
+It is built from PlacidWay's own values, not from a house style: coral `#e85a4f`, their system font
+stack, 10 px radius on the primary control, hairline cards, and the price printed the way their
+package page prints it. [`docs/BRAND.md`](docs/BRAND.md) records where every value came from and
+[`frontend/DESIGN.md`](frontend/DESIGN.md) says what was used and what was refused.
 
 ```bash
 cd frontend
 npm ci
 npm run build      # -> frontend/out, served at /
 ```
+
 
 Docker:
 

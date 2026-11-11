@@ -15,6 +15,8 @@ export class ChatError extends Error {
   constructor(
     message: string,
     readonly status?: number,
+    /** Seconds to wait, from a 429 `Retry-After`. */
+    readonly retryAfter: number | null = null,
   ) {
     super(message);
     this.name = "ChatError";
@@ -35,7 +37,7 @@ export async function streamChat(
   });
 
   if (!response.ok || !response.body) {
-    throw new ChatError("The answer service did not respond.", response.status);
+    throw new ChatError("The answer service did not respond.", response.status, retryAfterOf(response));
   }
 
   const reader = response.body.getReader();
@@ -80,4 +82,11 @@ export async function streamChat(
   }
   const tail = (buffer + decoder.decode()).replace(/\r/g, "").trim();
   if (tail) handleBlock(tail);
+}
+
+function retryAfterOf(response: Response): number | null {
+  const raw = response.headers.get("Retry-After");
+  if (!raw) return null;
+  const seconds = Number(raw);
+  return Number.isFinite(seconds) && seconds > 0 ? seconds : null;
 }
