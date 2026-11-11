@@ -17,6 +17,7 @@ from __future__ import annotations
 import logging
 import re
 from dataclasses import dataclass, field
+from datetime import datetime
 
 from . import guard
 from .config import settings
@@ -52,6 +53,9 @@ Hard rules, in order of importance:
    figure is not given. Do not refuse just because the exact figure is missing.
 4. When you give a price, always include the currency and any qualifier the source uses, such as
    "starting from", "outpatient program", or "inpatient program". Never round or convert a price.
+   A block headed "PRICE ROWS ON THIS PAGE" is part of that source. If it lists the program the
+   visitor asked about, that is the price: give it. Never say a figure is missing when a price row
+   states it.
 5. If the visitor asserts something that the SOURCES contradict, correct it directly and give the
    correct figure with its citation. Never agree with a wrong premise to be polite.
 6. Do not give medical advice, a diagnosis, or an opinion on whether a treatment is right for a
@@ -156,20 +160,42 @@ class AnswerResult:
     latency_ms: int
     confidence: float
     guard_issues: list[str] = field(default_factory=list)
+    # When the answer quotes a price, the date the corpus was built. The pages
+    # are a snapshot, and a price with no date reads as if it were checked now.
+    prices_checked_at: str | None = None
 
 
-def _build_evidence(hits, price_rows: list[dict] | None = None) -> tuple[str, list[Source]]:
+def _corpus_date() -> str | None:
+    """The date the knowledge base was last rebuilt, as "11 Nov 2026"."""
+    built = store.corpus.get("built_at")
+    if not built:
+        return None
+    try:
+        return datetime.strptime(built, "%Y-%m-%dT%H:%M:%SZ").strftime("%d %b %Y")
+    except ValueError:
+        return built[:10]
+
+
+def _build_evidence(
+    hits, price_rows: list[dict] | None = None
+) -> tuple[str, list[Source], dict[int, str]]:
     """Number the retrieved chunks and render them as the model's evidence.
 
     Price rows are attached to the numbered source they came from, never given
     as a separate unnumbered block. An unnumbered block lets the model state a
     correct price and then cite whichever source happens to be [1], which is a
     citation that points at the wrong page.
+
+    The third return value maps a citation number to its own block, so the guard
+    can check that a cited page actually contains the figure it is cited for.
     """
     price_rows = price_rows or []
     blocks: list[str] = []
+    by_id: dict[int, str] = {}
+    url_by_id: dict[int, str] = {}
     sources: list[Source] = []
     used_urls: set[str] = set()
+    priced_urls: set[str] = set()
 
     def render_prices(url: str) -> str:
         rows = [r for r in price_rows if r["source_url"] == url]
@@ -177,7 +203,7 @@ def _build_evidence(hits, price_rows: list[dict] | None = None) -> tuple[str, li
             return ""
         lines = ["", "PRICE ROWS ON THIS PAGE:"]
         for row in rows:
-            label = row.get("treatment") or "Treatment"
+            label = (row.get("treatment") or "Treatment").replace("*", "").strip()
             context = (row.get("context") or "").strip()
             lines.append(f"- {label}: {row['amount']:,.0f} {row['currency']} - {context[:220]}")
         return "\n".join(lines)
@@ -185,13 +211,24 @@ def _build_evidence(hits, price_rows: list[dict] | None = None) -> tuple[str, li
     for hit in hits:
         chunk = hit.chunk
         index = len(sources) + 1
-        blocks.append(
+        # The same page can supply eight chunks. Repeating its price rows in
+        # every one of them buries the figure in noise, so they are rendered
+        # once, on the first chunk from that page.
+        prices_block = ""
+        if chunk["url"] not in priced_urls:
+            prices_block = render_prices(chunk["url"])
+            if prices_block:
+                priced_urls.add(chunk["url"])
+        block = (
             f"[{index}] {chunk['page_title']} ({chunk['page_type']})\n"
             f"URL: {chunk['url']}\n"
             f"Section: {chunk['section']}\n"
             f"{chunk['text']}"
-            f"{render_prices(chunk['url'])}"
+            f"{prices_block}"
         )
+        blocks.append(block)
+        by_id[index] = block
+        url_by_id[index] = chunk["url"]
         sources.append(
             Source(id=index, title=chunk["page_title"], url=chunk["url"], page_type=chunk["page_type"])
         )
@@ -207,17 +244,28 @@ def _build_evidence(hits, price_rows: list[dict] | None = None) -> tuple[str, li
         if not page:
             continue
         index = len(sources) + 1
-        blocks.append(
+        block = (
             f"[{index}] {page['title']} ({page['page_type']})\n"
             f"URL: {url}\n"
             f"Section: Price list\n"
             f"Price rows for this page are listed below."
             f"{render_prices(url)}"
         )
+        blocks.append(block)
+        by_id[index] = block
+        url_by_id[index] = url
         sources.append(Source(id=index, title=page["title"], url=url, page_type=page["page_type"]))
         used_urls.add(url)
 
-    return "\n\n---\n\n".join(blocks), sources
+    # Price rows are rendered once per page, so a citation to any chunk of that
+    # page has to be checked against the whole page, not just that chunk.
+    per_url: dict[str, str] = {}
+    for index, block in by_id.items():
+        url = url_by_id[index]
+        per_url[url] = per_url.get(url, "") + "\n" + block
+    guard_blocks = {index: per_url[url_by_id[index]] for index in by_id}
+
+    return "\n\n---\n\n".join(blocks), sources, guard_blocks
 
 
 def _dedupe_sources(sources: list[Source]) -> list[Source]:
@@ -339,10 +387,18 @@ def answer(message: str, history: list[dict] | None = None) -> AnswerResult:
         )
 
     price_rows: list[dict] = []
-    if analysis.intent in {"cost", "comparison", "wrong_premise"}:
+    # The intent label is not enough: "and how much is the inpatient program?"
+    # is a follow-up, but it is still a price question, and without the price
+    # rows the model only sees prose that describes the option without a figure.
+    wants_price = analysis.intent in {"cost", "comparison", "wrong_premise"} or re.search(
+        r"\b(price|prices|cost|costs|how much|fee|fees|pricing|cheap|expensive)\b",
+        query,
+        re.IGNORECASE,
+    )
+    if wants_price:
         price_rows = price_rows_for_query(query)
 
-    evidence, sources = _build_evidence(retrieval.hits, price_rows)
+    evidence, sources, blocks = _build_evidence(retrieval.hits, price_rows)
 
     premise = ""
     if analysis.asserted_fact:
@@ -383,7 +439,7 @@ def answer(message: str, history: list[dict] | None = None) -> AnswerResult:
         )
 
     text = result.text
-    check = guard.check(text, evidence=evidence, source_count=len(sources))
+    check = guard.check(text, evidence=evidence, source_count=len(sources), blocks=blocks)
 
     if not check.ok:
         log.info("guard failed (%s); regenerating", check.issues)
@@ -393,13 +449,13 @@ def answer(message: str, history: list[dict] | None = None) -> AnswerResult:
         ]
         try:
             retry = chat(retry_messages, max_tokens=700)
-            retry_check = guard.check(retry.text, evidence=evidence, source_count=len(sources))
+            retry_check = guard.check(retry.text, evidence=evidence, source_count=len(sources), blocks=blocks)
             if retry_check.ok:
                 text, check, result = retry.text, retry_check, retry
             else:
                 # Keep the supported sentences, drop the invented ones.
                 trimmed = guard.strip_unsupported_sentences(retry.text, evidence)
-                trimmed_check = guard.check(trimmed, evidence=evidence, source_count=len(sources))
+                trimmed_check = guard.check(trimmed, evidence=evidence, source_count=len(sources), blocks=blocks)
                 if trimmed_check.ok and trimmed:
                     text, check = trimmed, trimmed_check
                 else:
@@ -489,4 +545,5 @@ def answer(message: str, history: list[dict] | None = None) -> AnswerResult:
         latency_ms=result.latency_ms,
         confidence=retrieval.confidence,
         guard_issues=[],
+        prices_checked_at=_corpus_date() if price_rows and not is_refusal else None,
     )

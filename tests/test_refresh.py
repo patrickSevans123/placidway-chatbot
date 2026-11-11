@@ -111,9 +111,68 @@ def test_gate_rejects_a_price_collapse():
     assert "69" in reason
 
 
+def test_gate_rejects_a_page_that_lost_its_price_table():
+    old = _corpus()
+    new = _corpus()
+    new["pages"][5]["prices"] = 0
+    reason = refresh.check_corpus(new, old)
+    assert reason is not None
+    assert "price rows" in reason
+
+
+def test_gate_allows_a_page_that_never_had_prices():
+    # The video page lists no prices, so zero is correct there.
+    old = _corpus()
+    old["pages"][4]["prices"] = 0
+    new = _corpus()
+    new["pages"][4]["prices"] = 0
+    assert refresh.check_corpus(new, old) is None
+
+
 def test_gate_allows_a_small_shrink():
     # 183 -> 175 is a 4.4% drop, inside the 10% tolerance.
     assert refresh.check_corpus(_corpus(chunks=175), _corpus(chunks=183)) is None
+
+
+# -- the change report ---------------------------------------------------
+
+
+def test_diff_reports_a_price_that_moved():
+    old = _corpus()
+    old["prices"] = [
+        {"treatment": "Adenocarcinoma package", "amount": 18995, "currency": "USD", "source_url": "u1"},
+    ]
+    new = _corpus()
+    new["prices"] = [
+        {"treatment": "Adenocarcinoma package", "amount": 19995, "currency": "USD", "source_url": "u1"},
+    ]
+    diff = refresh.diff_corpora(old, new)
+    assert diff["prices_moved"] == [
+        {"treatment": "Adenocarcinoma package", "from": 18995, "to": 19995, "currency": "USD"}
+    ]
+    assert diff["prices_added"] == 0
+    assert diff["prices_removed"] == 0
+
+
+def test_diff_reports_added_and_removed_prices():
+    old = _corpus()
+    old["prices"] = [{"treatment": "Old", "amount": 100, "currency": "USD", "source_url": "u1"}]
+    new = _corpus()
+    new["prices"] = [{"treatment": "New", "amount": 200, "currency": "USD", "source_url": "u1"}]
+    diff = refresh.diff_corpora(old, new)
+    assert diff["prices_added"] == 1
+    assert diff["prices_removed"] == 1
+    assert diff["prices_moved"] == []
+
+
+def test_diff_reports_chunk_churn():
+    old = _corpus()
+    old["chunks"] = [{"id": "a"}, {"id": "b"}]
+    new = _corpus()
+    new["chunks"] = [{"id": "b"}, {"id": "c"}]
+    diff = refresh.diff_corpora(old, new)
+    assert diff["chunks_added"] == 1
+    assert diff["chunks_removed"] == 1
 
 
 # -- the run -------------------------------------------------------------

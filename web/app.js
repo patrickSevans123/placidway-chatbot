@@ -238,7 +238,7 @@
     }
   }
 
-  function renderSources(sources, answerEl) {
+  function renderSources(sources, answerEl, checkedAt) {
     if (!sources || !sources.length) return;
 
     var wrap = el("div", "sources");
@@ -282,6 +282,13 @@
     });
 
     wrap.appendChild(list);
+
+    /* The corpus is a snapshot. A price with no date reads as if it were
+       checked this morning, so say when it was. */
+    if (checkedAt) {
+      wrap.appendChild(el("p", "sources-checked", "Prices checked " + checkedAt + "."));
+    }
+
     answerEl.appendChild(wrap);
   }
 
@@ -709,7 +716,7 @@
       renderNotFound(answerEl);
     }
 
-    renderSources(sources, answerEl);
+    renderSources(sources, answerEl, data.prices_checked_at);
 
     if (data.show_lead_form) {
       renderLeadForm(answerEl);

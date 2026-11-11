@@ -27,6 +27,25 @@ log = logging.getLogger(__name__)
 MONEY_RE = re.compile(r"(?:US\s*)?\$\s?(\d{1,3}(?:,\d{3})+|\d+)(?:\.\d{2})?")
 CURRENCY_WORDS = {"USD", "US$", "dollars", "dollar"}
 
+# Unrendered template syntax that survives into the article text. The price-list
+# page ships "prices range between =$priceRange?>" — a PHP placeholder the site
+# never filled in. Left in place it becomes a retrievable chunk and teaches the
+# model that a price range exists when the page states none.
+PLACEHOLDER_RE = re.compile(
+    r"=\$?[A-Za-z_][\w.]*\?>"  # =$priceRange?>
+    r"|\{\{[^{}]{1,80}\}\}"  # {{variable}}
+    r"|<\?php.*?\?>"  # <?php ... ?>
+    r"|\[\[[^\[\]]{1,80}\]\]",  # [[shortcode]]
+    re.DOTALL,
+)
+
+
+def _strip_placeholders(text: str) -> str:
+    cleaned = PLACEHOLDER_RE.sub(" ", text)
+    # Collapse the gap the removal leaves, without touching paragraph breaks.
+    cleaned = re.sub(r"[ \t]{2,}", " ", cleaned)
+    return cleaned
+
 
 @dataclass
 class PriceRow:
@@ -278,6 +297,7 @@ def extract_page(html: str, url: str, fallback_title: str) -> ExtractedPage:
         if len(fallback) > len(text or ""):
             text = fallback
 
+    text = _strip_placeholders(text)
     text = re.sub(r"\n{3,}", "\n\n", text).strip()
     blocks = _jsonld_blocks(html)
     tables = _tables_from_markdown(text)

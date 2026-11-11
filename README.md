@@ -5,7 +5,7 @@ the page behind every answer, and says "I don't know" instead of guessing.
 
 **Live:** https://placidway.patricksamuel.ninja
 
-**Test results:** [`TEST_RESULTS.md`](TEST_RESULTS.md) — 14 of 14 cases pass the automated checks,
+**Test results:** [`TEST_RESULTS.md`](TEST_RESULTS.md) — 20 of 20 cases pass the automated checks,
 including the eight questions in the brief.
 
 ---
@@ -159,15 +159,27 @@ currency and qualifier, and that "I don't know" is a good answer.
 
 **Layer 2 — structured prices.** For cost questions the model is not asked to find a number in a
 paragraph. The price rows extracted from JSON-LD and price tables are injected as a separate block,
-so the figure it writes is a row it was handed.
+so the figure it writes is a row it was handed. The block is attached once per page, not once per
+chunk, and it is attached whenever the question asks about money — including a follow-up like "and
+how much is the inpatient program?", which the intent classifier labels `followup` rather than
+`cost`.
+
+Every price answer also carries the date the corpus was built, shown under the sources as
+"Prices checked 11 Nov 2026". The pages are a snapshot, and a price with no date reads as if it were
+checked this morning.
 
 **Layer 3 — deterministic checks** (`app/guard.py`), run on every answer:
 
 | Check | Rule | On failure |
 |---|---|---|
 | Citation | every `[n]` must point at a supplied source; an answer with no citation is rejected | regenerate |
-| Numbers | every money amount in the answer must appear in the evidence, after normalising `$18,995` / `18995` / `18,995 USD` | regenerate |
-| Refusal | an answer that says the information is missing must not also contain a price | regenerate |
+| Numbers | every money amount in the answer must appear in the evidence, after normalising `$18,995` / `18995` / `18,995 USD` / `18.995 USD` | regenerate |
+| Citation support | a sentence that states a price must cite a page that actually contains that price | regenerate |
+| Refusal | a sentence that says the information is missing must not also state a price | regenerate |
+
+The citation-support check is the one that catches a real but misattributed figure. Without it the
+bot can quote the correct price and point at the wrong page, which the visitor discovers the moment
+they click the link.
 
 A failed answer is regenerated once with the failure reason appended to the system prompt. If it
 fails again, sentences containing unsupported numbers are stripped. If nothing supported remains,
@@ -316,10 +328,10 @@ Two operational notes learned the hard way:
 
 ```bash
 pytest tests/                    # unit tests
-python -m tests.run_eval         # the 14 assessment cases -> TEST_RESULTS.md
+python -m tests.run_eval         # the 20 assessment cases -> TEST_RESULTS.md
 ```
 
-`TEST_RESULTS.md` holds the bot's actual answers to the eight questions in the brief plus six extra
+`TEST_RESULTS.md` holds the bot's actual answers to the eight questions in the brief plus twelve extra
 cases (Spanish, Arabic, an out-of-corpus treatment, and a policy question), with the automated check
 result for each.
 

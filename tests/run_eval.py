@@ -35,6 +35,7 @@ class Case:
     expect_grounded: bool | None = None
     expect_intent: str | None = None
     expect_sources: bool | None = None
+    expect_prices_checked: bool | None = None
     note: str = ""
 
 
@@ -194,11 +195,74 @@ CASES: list[Case] = [
         expect_intent="wrong_premise",
         note="Same trick question with no chat history: must not agree, and must not invent a price.",
     ),
+    Case(
+        number=15,
+        kind="Extra - price freshness",
+        question="How much does the adrenal cancer package cost?",
+        must_contain=["18,995"],
+        expect_grounded=True,
+        expect_prices_checked=True,
+        note="A price answer must say when the price was checked, because the pages are a snapshot.",
+    ),
+    Case(
+        number=16,
+        kind="Extra - price list page",
+        question="What does the price list say about breast cancer treatment?",
+        must_contain=["18,995"],
+        expect_grounded=True,
+        expect_sources=True,
+        note="The price-list page lists breast cancer at 18,995 USD.",
+    ),
+    Case(
+        number=17,
+        kind="Extra - clinic location",
+        question="Where is the clinic located?",
+        must_contain=["tijuana"],
+        expect_grounded=True,
+        expect_sources=True,
+        note="The clinic profile page places the clinic in Tijuana, Mexico.",
+    ),
+    Case(
+        number=18,
+        kind="Extra - videos",
+        question="Are there patient videos I can watch?",
+        must_contain=["video"],
+        expect_grounded=True,
+        expect_sources=True,
+        note="The videos page exists and must be cited rather than guessed at.",
+    ),
+    Case(
+        number=19,
+        kind="Extra - follow-up on price",
+        question="And how much is the inpatient program?",
+        history=[
+            {"role": "user", "content": "How much does adenocarcinoma cancer treatment cost in Tijuana?"},
+            {
+                "role": "assistant",
+                "content": "The outpatient program is listed at $18,995 USD for three weeks [1].",
+            },
+        ],
+        must_contain=["30,000"],
+        expect_grounded=True,
+        note="Must resolve 'the inpatient program' against the previous turn and give 30,000 USD.",
+    ),
+    Case(
+        number=20,
+        kind="Extra - absent treatment",
+        question="Do you offer LASIK eye surgery?",
+        must_contain=[],
+        must_not_contain=["$"],
+        expect_grounded=False,
+        note="LASIK is on none of the seven pages; must refuse and must not quote a price.",
+    ),
 ]
 
 
 def _normalise(text: str) -> str:
-    return re.sub(r"\s+", " ", text).lower()
+    text = re.sub(r"\s+", " ", text).lower()
+    # 18.995 and 18,995 are the same price in two conventions. A Spanish answer
+    # writes the first, and the check should not fail it for that.
+    return re.sub(r"(?<=\d)[.,](?=\d{3}\b)", ",", text)
 
 
 def evaluate(case: Case) -> dict:
@@ -226,6 +290,9 @@ def evaluate(case: Case) -> dict:
     if case.expect_sources is True and not result.sources:
         failures.append("no sources returned")
 
+    if case.expect_prices_checked is True and not result.prices_checked_at:
+        failures.append("a price answer did not report when the price was checked")
+
     # A price in an English answer must always carry a currency marker. Other
     # languages write the currency in their own script ("دولار"), so the check
     # only applies to English.
@@ -244,6 +311,7 @@ def evaluate(case: Case) -> dict:
         "confidence": result.confidence,
         "model": result.model,
         "latency_ms": elapsed,
+        "prices_checked_at": result.prices_checked_at,
         "failures": failures,
         "passed": not failures,
     }
@@ -297,6 +365,7 @@ def write_report(results: list[dict]) -> None:
         lines.append(
             f"**Signals:** intent `{r['intent']}`, grounded `{r['grounded']}`, "
             f"language `{r['language']}`, retrieval confidence `{r['confidence']}`, model `{r['model']}`"
+            + (f", prices checked `{r['prices_checked_at']}`" if r.get("prices_checked_at") else "")
         )
         if case.note:
             lines.append("")

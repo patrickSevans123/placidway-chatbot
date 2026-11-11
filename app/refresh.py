@@ -71,6 +71,7 @@ class Outcome:
     seconds: float = 0.0
     checked_at: str = ""
     built_at: str | None = None
+    diff: dict | None = None
 
     def as_dict(self) -> dict:
         return {
@@ -84,6 +85,7 @@ class Outcome:
             "seconds": self.seconds,
             "checked_at": self.checked_at,
             "built_at": self.built_at,
+            "diff": self.diff,
         }
 
 
@@ -148,6 +150,17 @@ def check_corpus(new: dict, old: dict | None) -> str | None:
         if before and after < before * (1 - MAX_PAGE_DROP):
             return f"{slug} fell from {before} to {after} characters"
 
+    # A page that used to list prices and now lists none has lost its table,
+    # which is the failure that matters most on a site whose main question is
+    # "how much does it cost".
+    previous_prices = {p.get("slug"): p.get("prices", 0) for p in old.get("pages", [])}
+    for page in new.get("pages", []):
+        slug = page.get("slug")
+        before = previous_prices.get(slug, 0)
+        after = page.get("prices", 0)
+        if before and not after:
+            return f"{slug} lost all {before} price rows"
+
     old_chunks = old.get("chunk_count", 0)
     new_chunks = new.get("chunk_count", 0)
     if old_chunks and new_chunks < old_chunks * (1 - MAX_SHRINK):
@@ -159,6 +172,46 @@ def check_corpus(new: dict, old: dict | None) -> str | None:
         return f"price rows fell from {old_prices} to {new_prices}"
 
     return None
+
+
+# -- the change report ---------------------------------------------------
+
+
+def _price_key(row: dict) -> tuple[str, str]:
+    return (row.get("source_url", ""), (row.get("treatment") or "").strip().lower())
+
+
+def diff_corpora(old: dict, new: dict) -> dict:
+    """What actually changed between two builds.
+
+    A page slug in a log line says a page moved. It does not say that the
+    adenocarcinoma package went from 18,995 to 19,995, which is the only change
+    anyone running this site cares about.
+    """
+    old_prices = {_price_key(r): r for r in old.get("prices", [])}
+    new_prices = {_price_key(r): r for r in new.get("prices", [])}
+
+    moved = [
+        {
+            "treatment": new_prices[key].get("treatment") or "Treatment",
+            "from": old_prices[key].get("amount"),
+            "to": new_prices[key].get("amount"),
+            "currency": new_prices[key].get("currency", "USD"),
+        }
+        for key in old_prices.keys() & new_prices.keys()
+        if old_prices[key].get("amount") != new_prices[key].get("amount")
+    ]
+
+    old_chunks = {c.get("id") for c in old.get("chunks", [])}
+    new_chunks = {c.get("id") for c in new.get("chunks", [])}
+
+    return {
+        "prices_added": len(new_prices.keys() - old_prices.keys()),
+        "prices_removed": len(old_prices.keys() - new_prices.keys()),
+        "prices_moved": moved[:20],
+        "chunks_added": len(new_chunks - old_chunks),
+        "chunks_removed": len(old_chunks - new_chunks),
+    }
 
 
 # -- the refresh ---------------------------------------------------------
@@ -226,6 +279,7 @@ def run(force: bool = False) -> Outcome:
             log.error("refresh rejected, old corpus kept: %s", reason)
             raise RefreshRejected(reason)
 
+        diff = diff_corpora(store.corpus, new_corpus)
         write_corpus(new_corpus)
         store.reload()
 
@@ -234,6 +288,7 @@ def run(force: bool = False) -> Outcome:
         state["last_reason"] = None
         state["changed_pages"] = changed_pages
         state["built_at"] = new_corpus.get("built_at")
+        state["last_diff"] = diff
         _save_state(state)
 
         log.info(
@@ -252,6 +307,7 @@ def run(force: bool = False) -> Outcome:
             seconds=round(time.monotonic() - started, 1),
             checked_at=checked_at,
             built_at=new_corpus.get("built_at"),
+            diff=diff,
         )
     finally:
         _lock.release()
@@ -267,4 +323,5 @@ def status() -> dict:
         "last_reason": state.get("last_reason"),
         "changed_pages": state.get("changed_pages", []),
         "corpus_built_at": store.corpus.get("built_at"),
+        "last_diff": state.get("last_diff"),
     }

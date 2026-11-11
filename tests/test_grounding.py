@@ -67,3 +67,35 @@ def test_strips_only_the_unsupported_sentence():
 
 def test_amounts_in_handles_both_notations():
     assert guard.amounts_in("$18,995 and 30,000 USD") == [18995.0, 30000.0]
+
+
+BLOCKS = {
+    1: "[1] Package page\nThe outpatient program starts at $18,995 USD for three weeks.",
+    2: "[2] Price list\nAn initial holistic consultation is $50 USD.",
+}
+
+
+def test_rejects_a_price_cited_to_the_wrong_page():
+    # The number is real, but the page it points at does not contain it.
+    answer = "The package costs $18,995 USD [2]."
+    result = guard.check(
+        answer, evidence="\n".join(BLOCKS.values()), source_count=2, blocks=BLOCKS
+    )
+    assert not result.ok
+    assert any("does not contain the price" in issue for issue in result.issues)
+
+
+def test_accepts_a_price_cited_to_the_right_page():
+    answer = "The package costs $18,995 USD [1]."
+    result = guard.check(
+        answer, evidence="\n".join(BLOCKS.values()), source_count=2, blocks=BLOCKS
+    )
+    assert result.ok, result.issues
+
+
+def test_accepts_two_prices_cited_to_two_pages():
+    answer = "The package is $18,995 USD [1] and a consultation is $50 USD [2]."
+    result = guard.check(
+        answer, evidence="\n".join(BLOCKS.values()), source_count=2, blocks=BLOCKS
+    )
+    assert result.ok, result.issues

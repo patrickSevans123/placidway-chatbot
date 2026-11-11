@@ -176,6 +176,7 @@ def chat(request: ChatRequest):
         "latency_ms": int((time.monotonic() - started) * 1000),
         "model": result.model,
         "confidence": result.confidence,
+        "prices_checked_at": result.prices_checked_at,
     }
 
 

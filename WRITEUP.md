@@ -2,13 +2,13 @@
 
 ## What I would improve with another week
 
-**A change report on top of the scheduled refresh.** The refresh now runs daily, detects which pages
-changed, and refuses to replace a corpus that lost content. What it does not do is say *what*
-changed. I would diff the two corpora and post a short summary — which prices moved, which chunks
-appeared or disappeared. For a site whose main question is "how much does it cost", a price change
-is the event worth knowing about, and right now it is only visible as a page slug in a log line.
+**Deliver the change report somewhere a person reads it.** The refresh now runs daily, detects which
+pages changed, refuses to replace a corpus that lost content, and records a diff: which prices moved,
+which chunks appeared or disappeared. That diff is only visible in `/api/admin/refresh/status`. I
+would post it to email or Slack when a price moves, because a price change on a site whose main
+question is "how much does it cost" is the one event worth interrupting someone for.
 
-**A real evaluation set instead of fourteen cases.** Fourteen cases prove the pipeline works; they do
+**A real evaluation set instead of twenty cases.** Twenty cases prove the pipeline works; they do
 not measure it. I would build 60–100 questions with known correct answers, split by type (cost,
 inclusion, comparison, refusal, adversarial), and track two numbers per release: the share of
 answers whose every claim is supported by a cited passage, and the share of refusals that should

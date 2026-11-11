@@ -78,7 +78,13 @@ def _coverage(query: str, hits: list[Hit], idf: dict[str, float]) -> float:
 
     evidence_tokens: set[str] = set()
     for hit in hits:
-        evidence_tokens.update(tokenize(hit.chunk["text"]))
+        chunk = hit.chunk
+        # The same text BM25 indexes. Using only the body made a page whose
+        # chunks are lists of titles ("Recent Reviews", "Bonnie's story")
+        # invisible to the coverage check even when retrieval found it.
+        evidence_tokens.update(
+            tokenize(f"{chunk['page_title']} {chunk['section']} {chunk['text']}")
+        )
 
     def weight(token: str) -> float:
         return idf.get(token, 6.0)
@@ -152,19 +158,31 @@ def price_rows_for_query(query: str, limit: int = 12) -> list[dict]:
     Prices are structured data, so they are looked up directly rather than
     retrieved as text. This is what keeps a cost answer exact: the model is
     handed the row, not a paragraph that happens to contain a number.
+
+    A match on the row's own label counts for more than a match in the
+    surrounding prose. Without that, a long prose context mentioning "cancer"
+    and "Tijuana" outranks the row actually labelled "In-Patient Program", and
+    the model is handed the wrong figure.
     """
     rows = store.snapshot.corpus.get("prices", [])
     if not rows:
         return []
 
-    lowered = query.lower()
+    def squash(text: str) -> str:
+        # "**In-Patient Program**" and "inpatient" must compare equal.
+        return re.sub(r"[^a-z0-9]", "", text.lower())
+
+    query_tokens = {squash(t) for t in re.findall(r"[a-z]{4,}", query.lower())}
     scored: list[tuple[float, dict]] = []
     for row in rows:
-        haystack = f"{row.get('treatment','')} {row.get('context','')}".lower()
+        treatment = squash(row.get("treatment", ""))
+        context = squash(row.get("context", ""))
         score = 0.0
-        for token in set(re.findall(r"[a-z]{4,}", lowered)):
-            if token in haystack:
-                score += 1.0
+        for token in query_tokens:
+            if token and token in treatment:
+                score += 2.0
+            elif token and token in context:
+                score += 0.5
         # Prefer rows that came from structured data over prose matches.
         score += {"json-ld": 0.5, "table": 0.4, "prose": 0.0}.get(row.get("origin", ""), 0.0)
         scored.append((score, row))

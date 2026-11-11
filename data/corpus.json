@@ -1,5 +1,5 @@
 {
- "built_at": "2026-11-11T09:26:43Z",
+ "built_at": "2026-11-11T09:38:42Z",
  "page_count": 7,
  "chunk_count": 183,
  "pages": [
@@ -9,9 +9,9 @@
    "title": "ITC Immunity Therapy Center - Cancer Treatment in Tijuana Mexico",
    "page_type": "Clinic profile",
    "summary": "Who the clinic is, where it is, doctors, accreditations, facilities, contact details.",
-   "sha256": "1e52964d0cd33aa6edc0039d1d110438a810d4d2f4604276a78fa0bdcedb3a88",
-   "text_sha256": "fb37db3a7ade301c74229a5a6f851b0d95592ded34a04810ecf9a5a5f2c030b7",
-   "chars": 20559,
+   "sha256": "d5e89393748442a8987b86e8777ed98b6f81d9c825dcc1369b09630fa25a4c48",
+   "text_sha256": "4fe9763073e8da8418ba832b5401008c97fb3edf9d53b89e34a27664e2902c3e",
+   "chars": 20555,
    "chunks": 53,
    "prices": 2,
    "faqs": 7
@@ -22,7 +22,7 @@
    "title": "Alternative Adenocarcinoma Cancer Treatment in Tijuana",
    "page_type": "Treatment package",
    "summary": "Adenocarcinoma package: price, what is included, duration, recovery, FAQs.",
-   "sha256": "375aedee273ae530ab2df4e8a4545d17b9644bb6b12f3ab6c4fec4a6a5766503",
+   "sha256": "d72f99416be0b1ca83bcd60f7e533e0f6e7602a15a43dec6d9a5d61cbe516860",
    "text_sha256": "95aceb4914eaa965da7ff1a544491d176bf233ad37f0a5ce8324ad70e0d57902",
    "chars": 11805,
    "chunks": 23,
@@ -35,7 +35,7 @@
    "title": "Alternative Adrenal Cancer Treatment in Tijuana",
    "page_type": "Treatment package",
    "summary": "Adrenal cancer package: price, what is included, duration, recovery, FAQs.",
-   "sha256": "f511f10cdb1ddc805b0a100c1cb0575502e08d1e175977f425cd2511e359807d",
+   "sha256": "bdf3bf2fe41e089c2ce531dc59da114b0d73aaba8cc45795cb962a9dd98a7261",
    "text_sha256": "08b309fa784fd20d986ae4b05de904000003325236b8341f296c953f586ece48",
    "chars": 11932,
    "chunks": 24,
@@ -48,7 +48,7 @@
    "title": "Alternative Anal Cancer Treatment in Tijuana",
    "page_type": "Treatment package",
    "summary": "Anal cancer package: price, what is included, duration, recovery, FAQs.",
-   "sha256": "57064bb6adb286c0a889ba8551bdacc5ab1df9ea6c0b9df2939383878bd7b2e7",
+   "sha256": "01d843cf19402b2bd54339acf979a230f4a0293d50577b38c98aed96da1d9d81",
    "text_sha256": "1beaa6e845cc1169b3a24eb7d8c96281047c493f43e882341aaf83051d278f5c",
    "chars": 11855,
    "chunks": 23,
@@ -61,9 +61,9 @@
    "title": "ITC Tijuana Videos | Alternative Cancer Treatment",
    "page_type": "Clinic videos",
    "summary": "Patient testimonial videos and treatment explainer videos from the clinic.",
-   "sha256": "dbbe4c8ef436c12e85610a34285b779f864ee800084599681253c57bf0b31bc5",
-   "text_sha256": "c2a85f7279d279dcecaf44401a57a93608fe792290315d56c5a3e162e91a299b",
-   "chars": 29292,
+   "sha256": "508dd93211fb4e1159d316f6a8ff7ceed08db08868db98c627b4d056470d380a",
+   "text_sha256": "ca21b89f4ce39376bbaacd1e807b93bba3428be3230b0c690d3de055433f352e",
+   "chars": 29288,
    "chunks": 31,
    "prices": 0,
    "faqs": 0
@@ -74,9 +74,9 @@
    "title": "ITC Immunity Therapy Center Prices | Tijuana Cancer Care",
    "page_type": "Price list",
    "summary": "The clinic's structured price list: procedure, details, price in USD.",
-   "sha256": "04ed8528fa07e746caebec749a9ccd92978e95ac342ad269e82e98d8567b109a",
-   "text_sha256": "7e4dfbd72bf483c79353df09903790ea54155a45f283779fbc2df3fc2032d39d",
-   "chars": 2048,
+   "sha256": "27854c5ba2f28a8604ab2e0d4cb41289a01053be08c30ac2878c24c40dc6d7df",
+   "text_sha256": "2cee920240de6521f23e3edd8ac54c182007320c143349206a3a996b2f2e4e8c",
+   "chars": 2024,
    "chunks": 4,
    "prices": 3,
    "faqs": 0
@@ -87,7 +87,7 @@
    "title": "Alternative Medicine Cost Abroad - Compare Prices 2026",
    "page_type": "Price comparison",
    "summary": "Average and range of alternative medicine prices across clinics and countries.",
-   "sha256": "ebc94171d235b38243f6ad344047b6c04d39768cfdd1c6bac825620fddd9df58",
+   "sha256": "8164524a8c7b58763d0bbbcc54eee4e7f658526f957833f825e7ec1d1709ae90",
    "text_sha256": "10dab0484700c9e001d738d1931825ddc192a9a125b2249a0c21905d8a657865",
    "chars": 8916,
    "chunks": 25,
@@ -1447,12 +1447,12 @@
    "ordinal": 26
   },
   {
-   "id": "cli-15e9c284f9b9",
+   "id": "cli-6dd51b8b3f08",
    "url": "https://www.placidway.com/profile-videos/5/Alternative-Cancer-Treatment-by-ITC-Immunity-Therapy-Center",
    "page_title": "ITC Tijuana Videos | Alternative Cancer Treatment",
    "page_type": "Clinic videos",
    "section": "Recent Reviews",
-   "text": "Beware, the doctors lie to you at this clinic.  I recently went down for 3 weeks of treatment for breast cancer. Even though I told them I didn't want their chemo treatment, they assured me it would be really helpful, they would only be using 10% and I would not lose my hair. They lied. I lost all of my hair which started 1 week after I returned home. When contacting my doctor he told me that was so unusual and recommended Minoxidal (which actually makes your hair shed worse before it regrows).  This happened to 2 other women I kept in contact with. So it wasn't that unusual. When I followed up to find out what they gave me, it was the MOST toxic of all the chemotherapy treatments and they gave me a 50% dose, not 10%. It makes me question everything they are administering here.  It has been extremely stressful which is opposite from what I need healing cancer. I am guessing they push chemo so much because they want results. I later found out the type of cancer I have, isn't responsive to chemotherapy. I would have hoped a clinic like this would have tests to check this. The total disrespect for me to make an informed decision makes me motivated to share my story to help protect others. I regret going here. Spend your money with doctors who are honest.",
+   "text": "Beware, the doctors lie to you at this clinic. I recently went down for 3 weeks of treatment for breast cancer. Even though I told them I didn't want their chemo treatment, they assured me it would be really helpful, they would only be using 10% and I would not lose my hair. They lied. I lost all of my hair which started 1 week after I returned home. When contacting my doctor he told me that was so unusual and recommended Minoxidal (which actually makes your hair shed worse before it regrows). This happened to 2 other women I kept in contact with. So it wasn't that unusual. When I followed up to find out what they gave me, it was the MOST toxic of all the chemotherapy treatments and they gave me a 50% dose, not 10%. It makes me question everything they are administering here. It has been extremely stressful which is opposite from what I need healing cancer. I am guessing they push chemo so much because they want results. I later found out the type of cancer I have, isn't responsive to chemotherapy. I would have hoped a clinic like this would have tests to check this. The total disrespect for me to make an informed decision makes me motivated to share my story to help protect others. I regret going here. Spend your money with doctors who are honest.",
    "ordinal": 27
   },
   {
@@ -1488,7 +1488,7 @@
    "page_title": "ITC Immunity Therapy Center Prices | Tijuana Cancer Care",
    "page_type": "Price list",
    "section": "ITC Immunity Therapy Center - Alternative Cancer Treatment in Tijuana Pricings:",
-   "text": "| Procedure | Details | Price in USD | Actions | \n|---|---|---|---|\n| Breast Cancer | Breast Cancer | $18995 |  | \n| Prostate Cancer | Prostate Cancer | $18995 |  | \n| Lung Cancer | Lung Cancer | $18995 |  | \n|  |  | $18995 |  | \n| Pancreatic Cancer | Pancreatic Cancer | $18995 |  | \n| Colorectal Cancer | 18995 USD | $18995 |  | \n| Colon Cancer | Colon Cancer | $18995 |  |",
+   "text": "| Procedure | Details | Price in USD | Actions | \n|---|---|---|---|\n| Breast Cancer | Breast Cancer | $18995 | | \n| Prostate Cancer | Prostate Cancer | $18995 | | \n| Lung Cancer | Lung Cancer | $18995 | | \n| | | $18995 | | \n| Pancreatic Cancer | Pancreatic Cancer | $18995 | | \n| Colorectal Cancer | 18995 USD | $18995 | | \n| Colon Cancer | Colon Cancer | $18995 | |",
    "ordinal": 0
   },
   {
@@ -1497,7 +1497,7 @@
    "page_title": "ITC Immunity Therapy Center Prices | Tijuana Cancer Care",
    "page_type": "Price list",
    "section": "About ITC Immunity Therapy Center - Alternative Cancer Treatment in Tijuana",
-   "text": "ITC Immunity Therapy Center - Alternative Cancer Treatment in Tijuana prices range between =$priceRange?> in Tijuana, Mexico for Alternative Medicine, Detox, Cancer Treatment, Chronic Diseases procedures and more. This range shows the clinic's promise to offer affordable, top-quality care to a wide range of local and international patients.\n\nBy offering a variety of pricing options, ITC Immunity Therapy Center - Alternative Cancer Treatment in Tijuana ensures that patients can choose treatments that not only meet their medical needs but also fit their financial situations. This approach helps to demystify healthcare costs and empowers patients to make informed decisions about their treatment options in Tijuana, Mexico",
+   "text": "ITC Immunity Therapy Center - Alternative Cancer Treatment in Tijuana prices range between in Tijuana, Mexico for Alternative Medicine, Detox, Cancer Treatment, Chronic Diseases procedures and more. This range shows the clinic's promise to offer affordable, top-quality care to a wide range of local and international patients.\n\nBy offering a variety of pricing options, ITC Immunity Therapy Center - Alternative Cancer Treatment in Tijuana ensures that patients can choose treatments that not only meet their medical needs but also fit their financial situations. This approach helps to demystify healthcare costs and empowers patients to make informed decisions about their treatment options in Tijuana, Mexico",
    "ordinal": 1
   },
   {
@@ -2165,7 +2165,7 @@
    "treatment": "",
    "amount": 18995.0,
    "currency": "USD",
-   "context": "## ITC Immunity Therapy Center - Alternative Cancer Treatment in Tijuana Pricings: | Procedure | Details | Price in USD | Actions | |---|---|---|---| | Breast Cancer | Breast Cancer | $18995 | | | Prostate Cancer | Prostate Cancer | $18995 | | | Lung Cancer | Lung Cancer | $18995 | | | | | $18995 | | | Pancreatic Cancer | Pancreatic Cancer | $18995 | | | Colorectal Cancer | 18995 USD | $18995 |",
+   "context": "## ITC Immunity Therapy Center - Alternative Cancer Treatment in Tijuana Pricings: | Procedure | Details | Price in USD | Actions | |---|---|---|---| | Breast Cancer | Breast Cancer | $18995 | | | Prostate Cancer | Prostate Cancer | $18995 | | | Lung Cancer | Lung Cancer | $18995 | | | | | $18995 | | | Pancreatic Cancer | Pancreatic Cancer | $18995 | | | Colorectal Cancer | 18995 USD | $18995 | | | Co",
    "source_url": "https://www.placidway.com/price-list/5/Alternative-Cancer-Treatment-by-ITC-Immunity-Therapy-Center",
    "origin": "prose"
   },
