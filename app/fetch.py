@@ -80,15 +80,21 @@ def allowed(url: str, client: httpx.Client) -> bool:
     return parser.can_fetch(settings.user_agent, url)
 
 
-def fetch_all(force: bool = False) -> list[FetchedPage]:
+def fetch_all() -> list[FetchedPage]:
     """Fetch every allow-listed page, honouring robots.txt and the crawl delay.
 
-    Raw HTML is cached under data/raw/<slug>.html. When the cached copy has the
-    same SHA-256 as the live page, the cached copy is reused, so a refresh only
-    re-parses pages that actually changed.
+    Raw HTML is cached under data/raw/<slug>.html so the corpus can be rebuilt
+    offline. The raw bytes are not used to decide whether anything changed: the
+    live pages carry per-request nonces and rotating widgets, so their SHA-256
+    differs on every fetch even when the article text is identical. Change
+    detection happens on the extracted text instead, in app.refresh.
     """
     settings.raw_dir.mkdir(parents=True, exist_ok=True)
     pages: list[FetchedPage] = []
+
+    # robots.txt is re-read on every run. A long-lived process must not keep
+    # obeying a rule the site has since removed, or ignore one it has added.
+    _robots_cache.clear()
 
     headers = {
         "User-Agent": settings.user_agent,
@@ -127,11 +133,6 @@ def fetch_all(force: bool = False) -> list[FetchedPage]:
 
             html = response.text
             digest = hashlib.sha256(html.encode("utf-8")).hexdigest()
-
-            if cache_path.exists() and not force:
-                old = hashlib.sha256(cache_path.read_bytes()).hexdigest()
-                if old == digest:
-                    log.info("%s unchanged (%s)", source.slug, digest[:12])
 
             cache_path.write_text(html, encoding="utf-8")
             pages.append(

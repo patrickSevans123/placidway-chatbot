@@ -2,7 +2,6 @@
 
     python -m app.ingest            # fetch, extract, chunk, write data/corpus.json
     python -m app.ingest --offline  # rebuild from cached HTML, no network
-    python -m app.ingest --force    # ignore the cache and re-fetch everything
 
 The output is a single JSON file. Keeping the knowledge base as a plain file
 means a refresh is atomic (write to a temp file, then rename), the diff between
@@ -12,6 +11,7 @@ two builds is readable, and the app has no database dependency for retrieval.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import logging
 import os
@@ -28,10 +28,23 @@ from .sources import SOURCES
 log = logging.getLogger("ingest")
 
 
-def build(offline: bool = False, force: bool = False) -> dict:
+def build(
+    offline: bool = False,
+    write: bool = True,
+    fetched: list | None = None,
+) -> dict:
+    """Fetch, extract and chunk the seven pages.
+
+    With ``write=False`` the corpus is returned but nothing on disk changes, so
+    a caller can validate it before replacing a working knowledge base. Passing
+    ``fetched`` reuses pages that were already downloaded, which stops a refresh
+    from requesting every URL twice.
+    """
     settings.data_dir.mkdir(parents=True, exist_ok=True)
 
-    if offline:
+    if fetched is not None:
+        pages_html = [(p.source, p.html, p.sha256) for p in fetched]
+    elif offline:
         pages_html = []
         for source in SOURCES:
             html = read_cached(source.slug)
@@ -40,7 +53,7 @@ def build(offline: bool = False, force: bool = False) -> dict:
                 continue
             pages_html.append((source, html, "cached"))
     else:
-        fetched = fetch_all(force=force)
+        fetched = fetch_all()
         pages_html = [(p.source, p.html, p.sha256) for p in fetched]
 
     if not pages_html:
@@ -71,6 +84,10 @@ def build(offline: bool = False, force: bool = False) -> dict:
                 "page_type": source.page_type,
                 "summary": source.summary,
                 "sha256": digest,
+                # Hash of the extracted article text, not the raw HTML. The raw
+                # pages carry per-request nonces, so their hash changes on every
+                # fetch; this one only changes when the content does.
+                "text_sha256": hashlib.sha256(extracted.text.encode("utf-8")).hexdigest(),
                 "chars": len(extracted.text),
                 "chunks": len(chunks),
                 "prices": len(extracted.prices),
@@ -112,33 +129,44 @@ def build(offline: bool = False, force: bool = False) -> dict:
         "faqs": all_faqs,
     }
 
+    if write:
+        write_corpus(corpus)
+
+    return corpus
+
+
+def write_corpus(corpus: dict) -> None:
+    """Replace the corpus atomically, then drop the embedding cache.
+
+    The write goes to a temp file and is renamed over the old one, so a reader
+    never sees a half-written JSON file. The embedding cache is deleted because
+    its row count is tied to the chunk count; the store rebuilds it lazily.
+    """
+    settings.data_dir.mkdir(parents=True, exist_ok=True)
     tmp = settings.corpus_path.with_suffix(".json.tmp")
     tmp.write_text(json.dumps(corpus, ensure_ascii=False, indent=1), encoding="utf-8")
     os.replace(tmp, settings.corpus_path)
 
-    # Embeddings are rebuilt lazily by the store when the corpus hash changes.
     if settings.embeddings_path.exists():
         settings.embeddings_path.unlink()
 
     log.info(
         "wrote %s: %d pages, %d chunks, %d price rows, %d faqs",
         settings.corpus_path,
-        len(page_records),
-        len(all_chunks),
-        len(all_prices),
-        len(all_faqs),
+        corpus["page_count"],
+        corpus["chunk_count"],
+        len(corpus["prices"]),
+        len(corpus["faqs"]),
     )
-    return corpus
 
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Build the PlacidWay knowledge base")
     parser.add_argument("--offline", action="store_true", help="rebuild from cached HTML only")
-    parser.add_argument("--force", action="store_true", help="ignore cache and re-fetch")
     args = parser.parse_args(argv)
 
     logging.basicConfig(level=logging.INFO, format="%(levelname)-7s %(message)s")
-    corpus = build(offline=args.offline, force=args.force)
+    corpus = build(offline=args.offline)
 
     if corpus["page_count"] < len(SOURCES):
         log.warning("only %d of %d pages ingested", corpus["page_count"], len(SOURCES))

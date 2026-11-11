@@ -5,4 +5,5 @@ __pycache__/
 data/raw/
 data/app.db
 data/embeddings.npy
+data/refresh_state.json
 .pytest_cache/

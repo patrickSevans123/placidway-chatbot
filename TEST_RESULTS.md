@@ -1,6 +1,6 @@
 # Test results
 
-Generated 2026-11-11 09:12 UTC by `python -m tests.run_eval`.
+Generated 2026-11-11 09:21 UTC by `python -m tests.run_eval`.
 
 **14 of 14 cases passed the automated checks.**
 
@@ -9,20 +9,20 @@ expected grounding, and every price carrying a currency. They do not judge writi
 
 | # | Type | Passed | Intent | Grounded | Sources | Latency |
 |---|---|---|---|---|---|---|
-| 1 | Cost | PASS | cost | yes | 1 | 5724 ms |
-| 2 | Comparison | PASS | comparison | yes | 1 | 5515 ms |
-| 3 | Procedure | PASS | procedure | yes | 1 | 3951 ms |
-| 4 | Follow-up | PASS | followup | yes | 1 | 3377 ms |
-| 5 | Not in content | PASS | booking | yes | 1 | 1871 ms |
-| 6 | Out of scope | PASS | out_of_scope | yes | 0 | 1967 ms |
-| 7 | Medical advice | PASS | medical_advice | yes | 1 | 3225 ms |
-| 8 | Trick | PASS | wrong_premise | yes | 1 | 3411 ms |
-| 9 | Extra - Spanish | PASS | cost | yes | 1 | 3417 ms |
-| 10 | Extra - not in content | PASS | cost | no | 1 | 3170 ms |
-| 11 | Extra - wrong clinic | PASS | general | no | 1 | 3507 ms |
-| 12 | Extra - Arabic | PASS | cost | yes | 3 | 3948 ms |
-| 13 | Extra - unsupported comparison | PASS | comparison | yes | 1 | 4581 ms |
-| 14 | Extra - trick without context | PASS | wrong_premise | yes | 4 | 4367 ms |
+| 1 | Cost | PASS | cost | yes | 1 | 3805 ms |
+| 2 | Comparison | PASS | comparison | yes | 1 | 3414 ms |
+| 3 | Procedure | PASS | procedure | yes | 1 | 3458 ms |
+| 4 | Follow-up | PASS | followup | yes | 1 | 5421 ms |
+| 5 | Not in content | PASS | booking | yes | 1 | 2039 ms |
+| 6 | Out of scope | PASS | out_of_scope | yes | 0 | 2064 ms |
+| 7 | Medical advice | PASS | medical_advice | yes | 1 | 2988 ms |
+| 8 | Trick | PASS | wrong_premise | yes | 1 | 3543 ms |
+| 9 | Extra - Spanish | PASS | cost | yes | 1 | 4380 ms |
+| 10 | Extra - not in content | PASS | cost | no | 1 | 2917 ms |
+| 11 | Extra - wrong clinic | PASS | general | no | 1 | 3109 ms |
+| 12 | Extra - Arabic | PASS | cost | yes | 4 | 8445 ms |
+| 13 | Extra - unsupported comparison | PASS | comparison | yes | 1 | 4428 ms |
+| 14 | Extra - trick without context | PASS | wrong_premise | yes | 3 | 3439 ms |
 
 ---
 
@@ -79,7 +79,7 @@ expected grounding, and every price carrying a currency. They do not judge writi
 - *user*: What is included in the adrenal cancer treatment package?
 - *assistant*: The adrenal cancer treatment package at ITC in Tijuana includes a three-week outpatient or inpatient program with immune-focused therapies and medical supervision [1].
 
-**Answer:** The pages describe the program as a 3-week treatment period, with weekly lab work and imaging to adjust therapies in real time, and a follow-up consultation three months after discharge [1]. A specific recovery time after the program is not given on these pages. For details on what to expect after treatment, you can request a free quote and the team can clarify.
+**Answer:** The pages describe the program as a three-week treatment period, with weekly lab work and imaging to adjust therapies in real time, and a follow-up consultation three months after discharge [1]. A specific recovery time after the program is not given on these pages. For details on what to expect after treatment, you can request a free quote and have your case reviewed.
 
 **Sources:**
 - [1] Alternative Adrenal Cancer Treatment in Tijuana — https://www.placidway.com/package/7902/Alternative-Adrenal-Cancer-Treatment-Package-in-Tijuana-Mexico-by-ITC
@@ -123,7 +123,7 @@ expected grounding, and every price carrying a currency. They do not judge writi
 
 **Question:** Is this surgery safe for my diabetes?
 
-**Answer:** I can't advise on whether a treatment is safe or suitable for you personally, as only a doctor who has reviewed your medical history can answer that. Please speak with your own doctor about your specific situation. PlacidWay can connect you with the clinic's medical team for a free quote and assessment.
+**Answer:** I can't advise on whether a treatment is safe or suitable for you personally, as only a doctor who has reviewed your medical history can answer that. Please speak with your own doctor about your situation. PlacidWay can connect you with the clinic's medical team for a free quote and assessment.
 
 **Sources:**
 - [1] ITC Immunity Therapy Center - Cancer Treatment in Tijuana Mexico — https://www.placidway.com/profile/5/Alternative-Cancer-Treatment-by-ITC-Immunity-Therapy-Center
@@ -142,7 +142,7 @@ expected grounding, and every price carrying a currency. They do not judge writi
 - *user*: How much does adenocarcinoma cancer treatment cost in Tijuana?
 - *assistant*: The cost is $18,995 USD for the three-week outpatient program and $30,000 USD for the inpatient program [1].
 
-**Answer:** That's not the price shown on the page — the Alternative Adenocarcinoma Cancer Treatment in Tijuana package is listed at 18,995 USD [1]. Optional add-ons are priced separately, for example Lymphocytes Activated Killer Cells (LAK) at $2,600 USD and Specific Killer Cell Antibody at $3,950 - $4,250 USD [1]. For a quote tailored to a specific case, you can request a free quote from PlacidWay.
+**Answer:** That's not the price shown on the page — the Alternative Adenocarcinoma Cancer Treatment in Tijuana package is listed at 18,995 USD [1]. Optional add-ons are priced separately, for example Lymphocytes Activated Killer Cells (LAK) at $2,600 USD and Intratumoral Immunotherapy at $6,200 - $7,200 USD [1]. For a personalized figure, you can request a free quote from PlacidWay.
 
 **Sources:**
 - [1] Alternative Adenocarcinoma Cancer Treatment in Tijuana — https://www.placidway.com/package/7903/Alternative-Adenocarcinoma-Cancer-Treatment-Package-in-Tijuana-Mexico-by-ITC
@@ -157,11 +157,11 @@ expected grounding, and every price carrying a currency. They do not judge writi
 
 **Question:** ¿Cuánto cuesta el tratamiento de adenocarcinoma en Tijuana?
 
-**Answer:** El paquete de tratamiento alternativo de adenocarcinoma en Tijuana tiene un precio de 18,995 USD [1]. Ese costo cubre intervenciones terapéuticas intensivas durante un período de tres semanas [1].
+**Answer:** El paquete de tratamiento alternativo de adenocarcinoma en Tijuana (ITC) tiene un precio de 18,995 USD [1]. Ese costo cubre intervenciones terapéuticas intensivas durante un período de tres semanas [1].
 
 Además, existen procedimientos especializados opcionales con costo adicional, que se recomiendan solo tras una evaluación del consejo médico [1]:
 - Células Asesinas Activadas por Linfocitos (LAK): 2,600 USD [1]
-- Anticuerpo Específico de Células Asesinas: 3,950 – 4,250 USD [1]
+- Anticuerpo de Células Asesinas Específicas: 3,950 – 4,250 USD [1]
 - Ablación Tumoral por Etanol: 3,800 – 4,250 USD [1]
 - Activación de Células Mononucleares (MCA): 4,650 USD [1]
 - Inmunoterapia Intratumoral: 6,200 – 7,200 USD [1]
@@ -196,7 +196,7 @@ Si deseas un presupuesto detallado para tu caso, puedes solicitar una cotizació
 
 **Question:** Does the clinic offer a money-back guarantee?
 
-**Answer:** The pages I have don't mention a money-back guarantee for ITC Immunity Therapy Center, so I can't confirm whether one is offered. For details on guarantees, payment terms or refunds, you can contact PlacidWay for a free quote and they can check with the clinic directly [1].
+**Answer:** The pages I have don't mention any money-back guarantee for this clinic, so I can't confirm whether one is offered. For details on guarantees, payment terms or refunds, you can contact PlacidWay for a free quote and they can check with the clinic directly [1].
 
 **Sources:**
 - [1] ITC Immunity Therapy Center - Cancer Treatment in Tijuana Mexico — https://www.placidway.com/profile/5/Alternative-Cancer-Treatment-by-ITC-Immunity-Therapy-Center
@@ -219,12 +219,13 @@ Si deseas un presupuesto detallado para tu caso, puedes solicitar una cotizació
 - سرطان البنكرياس: 18,995 دولار أمريكي [1]
 - سرطان القولون والمستقيم: 18,995 دولار أمريكي [1]
 
-أما باقات علاج السرطان فتُقدَّم على شكل برنامجين لمدة ثلاثة أسابيع: برنامج العيادات الخارجية بـ 18,995 دولار أمريكي، وبرنامج الإقامة الداخلية بـ 30,000 دولار أمريكي [2][3]. الأسعار لأنواع سرطانية أخرى غير المذكورة غير متوفرة في الصفحات المتاحة، ويمكن طلب عرض سعر مجاني من PlacidWay.
+أما باقات علاج السرطان فتُقدَّم على شكل برنامجين لمدة ثلاثة أسابيع: برنامج للمرضى الخارجيين بسعر 18,995 دولار أمريكي، وبرنامج للمرضى المقيمين بسعر 30,000 دولار أمريكي [2][3][4]. الأسعار لعلاجات أخرى غير المذكورة أعلاه غير متوفرة في الصفحات المتاحة، ويمكنكم طلب عرض سعر مجاني من PlacidWay.
 
 **Sources:**
 - [1] ITC Immunity Therapy Center Prices | Tijuana Cancer Care — https://www.placidway.com/price-list/5/Alternative-Cancer-Treatment-by-ITC-Immunity-Therapy-Center
 - [2] Alternative Anal Cancer Treatment in Tijuana — https://www.placidway.com/package/7901/Alternative-Anal-Cancer-Treatment-Package-in-Tijuana-Mexico-by-ITC
 - [3] Alternative Adrenal Cancer Treatment in Tijuana — https://www.placidway.com/package/7902/Alternative-Adrenal-Cancer-Treatment-Package-in-Tijuana-Mexico-by-ITC
+- [4] Alternative Adenocarcinoma Cancer Treatment in Tijuana — https://www.placidway.com/package/7903/Alternative-Adenocarcinoma-Cancer-Treatment-Package-in-Tijuana-Mexico-by-ITC
 
 **Signals:** intent `cost`, grounded `True`, language `ar`, retrieval confidence `1.0`, model `deepseek-v4-1-flash-1017`
 
@@ -251,13 +252,12 @@ Si deseas un presupuesto detallado para tu caso, puedes solicitar una cotizació
 
 **Question:** I heard it costs $50. Confirm that.
 
-**Answer:** $50 is not the price shown for these cancer treatment packages. The out-patient program is 18,995 USD and the in-patient program is 30,000 USD, each with a duration of 3 weeks [2][3][4]. The per-cancer price list also shows 18,995 USD for breast, prostate, lung, pancreatic, colorectal and colon cancer [1]. For a personalized figure, you can request a free quote from PlacidWay.
+**Answer:** $50 is not the price shown for this treatment. The ITC Immunity Therapy Center package in Tijuana is listed as an Out-Patient Program at 18,995 USD and an In-Patient Program at 30,000 USD, each with a duration of 3 weeks [1][2][3]. For a personalized figure, you can request a free quote from PlacidWay.
 
 **Sources:**
-- [1] ITC Immunity Therapy Center Prices | Tijuana Cancer Care — https://www.placidway.com/price-list/5/Alternative-Cancer-Treatment-by-ITC-Immunity-Therapy-Center
-- [2] Alternative Adenocarcinoma Cancer Treatment in Tijuana — https://www.placidway.com/package/7903/Alternative-Adenocarcinoma-Cancer-Treatment-Package-in-Tijuana-Mexico-by-ITC
-- [3] Alternative Adrenal Cancer Treatment in Tijuana — https://www.placidway.com/package/7902/Alternative-Adrenal-Cancer-Treatment-Package-in-Tijuana-Mexico-by-ITC
-- [4] Alternative Anal Cancer Treatment in Tijuana — https://www.placidway.com/package/7901/Alternative-Anal-Cancer-Treatment-Package-in-Tijuana-Mexico-by-ITC
+- [1] Alternative Adenocarcinoma Cancer Treatment in Tijuana — https://www.placidway.com/package/7903/Alternative-Adenocarcinoma-Cancer-Treatment-Package-in-Tijuana-Mexico-by-ITC
+- [2] Alternative Adrenal Cancer Treatment in Tijuana — https://www.placidway.com/package/7902/Alternative-Adrenal-Cancer-Treatment-Package-in-Tijuana-Mexico-by-ITC
+- [3] Alternative Anal Cancer Treatment in Tijuana — https://www.placidway.com/package/7901/Alternative-Anal-Cancer-Treatment-Package-in-Tijuana-Mexico-by-ITC
 
 **Signals:** intent `wrong_premise`, grounded `True`, language `en`, retrieval confidence `1.0`, model `deepseek-v4-1-flash-1017`
 

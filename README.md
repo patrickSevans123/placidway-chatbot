@@ -105,8 +105,10 @@ following anywhere in the crawler, so it cannot wander off the allow-list.
 The crawler reads `robots.txt` first and obeys it, sends
 `PlacidWayAssessmentBot/1.0 (+repo URL; assessment)` as its User-Agent, and waits 3 seconds between
 requests — the `Crawl-delay` PlacidWay publishes, which is stricter than the 1 request/second the
-brief asks for. Raw HTML is cached under `data/raw/` with a SHA-256 per page, so a refresh only
-re-parses pages that actually changed.
+brief asks for. Raw HTML is cached under `data/raw/` so the corpus can be rebuilt offline. Change
+detection does not use those raw bytes: the live pages carry per-request nonces and rotating
+widgets, so their SHA-256 differs on every fetch even when the article is identical. The hash that
+decides whether to rebuild is taken over the extracted text instead.
 
 Three extraction paths run on each page:
 
@@ -200,10 +202,32 @@ about recovery time?"* retrieves against the subject of the previous message rat
 ```bash
 python -m app.ingest            # CLI, rebuilds data/corpus.json atomically
 curl -X POST -H "X-Admin-Token: $ADMIN_TOKEN" https://…/api/admin/refresh
+curl -X POST -H "X-Admin-Token: $ADMIN_TOKEN" "https://…/api/admin/refresh?force=1"
 ```
 
-The endpoint re-crawls, rebuilds the index in place, and returns page/chunk counts. Unchanged pages
-are detected by SHA-256 and skipped.
+A refresh runs in four steps:
+
+1. Fetch the seven pages, obeying robots.txt and the crawl delay.
+2. Extract and chunk them in memory. Nothing on disk changes yet.
+3. Compare each page's extracted-text hash with the live corpus. If none differ, stop here and
+   return `changed: false` — no write, no embedding calls, no index rebuild.
+4. Otherwise run the sanity gate, write the corpus atomically, and swap the index in one step.
+
+The sanity gate is the part that matters. It rejects a new corpus and keeps the old one when any
+page extracts to under 400 characters, when a single page loses more than half its text, when the
+chunk count drops more than 10%, or when the price rows drop more than 10%. This exists because
+trafilatura 2.0.0 silently extracted the price-comparison page as 478 characters instead of 8,916,
+dropping 24 chunks and 22 price rows with no error at all. `?force=1` bypasses the gate.
+
+On the server a systemd timer runs it daily at 04:17 with a 30-minute random delay:
+
+```bash
+systemctl list-timers placidway-refresh.timer
+journalctl -u placidway-refresh.service -n 20
+```
+
+`/api/health` reports `refresh.last_checked`, `refresh.last_changed`, `refresh.last_result` and
+`refresh.changed_pages`, so a quiet day is distinguishable from a broken one.
 
 ---
 
@@ -217,6 +241,7 @@ app/
   extract.py    trafilatura + JSON-LD + price rows + FAQ pairs
   chunk.py      section-aware chunking
   ingest.py     CLI that writes data/corpus.json
+  refresh.py    scheduled refresh: change detection, sanity gate, state file
   store.py      in-memory BM25 + dense index
   retrieve.py   RRF fusion, page priors, price lookup
   llm.py        OpenAI-compatible client with model fallback

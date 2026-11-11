@@ -62,7 +62,7 @@ def _prior_for(query: str, page_type: str) -> float:
     return PRIOR_BOOST if any(re.search(rf"\b{re.escape(k)}", lowered) for k in keywords) else 0.0
 
 
-def _coverage(query: str, hits: list[Hit]) -> float:
+def _coverage(query: str, hits: list[Hit], idf: dict[str, float]) -> float:
     """IDF-weighted fraction of the query's content words present in the evidence.
 
     On a seven-page corpus this is the sharpest signal available for "is this
@@ -81,7 +81,7 @@ def _coverage(query: str, hits: list[Hit]) -> float:
         evidence_tokens.update(tokenize(hit.chunk["text"]))
 
     def weight(token: str) -> float:
-        return store.idf.get(token, 6.0)
+        return idf.get(token, 6.0)
 
     total = sum(weight(t) for t in query_tokens)
     if total <= 0:
@@ -92,17 +92,20 @@ def _coverage(query: str, hits: list[Hit]) -> float:
 
 def search(query: str, top_k: int | None = None) -> RetrievalResult:
     top_k = top_k or settings.top_k
-    if not store.ready:
+    # One snapshot for the whole search, so a refresh landing mid-request
+    # cannot hand us chunks from one build and a BM25 matrix from another.
+    index = store.snapshot
+    if not index.chunks:
         return RetrievalResult(hits=[], confidence=0.0, used_dense=False)
 
-    bm25_hits = store.bm25_search(query, settings.candidate_k)
-    dense_hits = store.dense_search(query, settings.candidate_k) if store.dense_ready else []
+    bm25_hits = store.bm25_search(query, settings.candidate_k, index)
+    dense_hits = store.dense_search(query, settings.candidate_k, index) if index.dense_ready else []
 
     fused: dict[int, Hit] = {}
 
     for rank, (idx, score) in enumerate(bm25_hits):
         fused[idx] = Hit(
-            chunk=store.chunks[idx],
+            chunk=index.chunks[idx],
             score=1.0 / (RRF_K + rank + 1),
             raw_score=1.0 / (RRF_K + rank + 1),
             bm25_rank=rank,
@@ -116,7 +119,7 @@ def search(query: str, top_k: int | None = None) -> RetrievalResult:
             fused[idx].dense_rank = rank
         else:
             fused[idx] = Hit(
-                chunk=store.chunks[idx],
+                chunk=index.chunks[idx],
                 score=contribution,
                 raw_score=contribution,
                 dense_rank=rank,
@@ -133,14 +136,14 @@ def search(query: str, top_k: int | None = None) -> RetrievalResult:
     # page-type prior is deliberately excluded - it is a tie-breaker for
     # ordering, and letting it in would make an off-topic question that happens
     # to contain "cost" look well supported.
-    coverage = _coverage(query, ranked)
+    coverage = _coverage(query, ranked, index.idf)
     top_cosine = 0.0
     if dense_hits:
         top_cosine = max(score for _, score in dense_hits)
     confidence = coverage + (0.15 if top_cosine >= 0.62 else 0.0)
     confidence = round(min(1.0, confidence), 4)
 
-    return RetrievalResult(hits=ranked, confidence=confidence, used_dense=store.dense_ready)
+    return RetrievalResult(hits=ranked, confidence=confidence, used_dense=index.dense_ready)
 
 
 def price_rows_for_query(query: str, limit: int = 12) -> list[dict]:
@@ -150,7 +153,7 @@ def price_rows_for_query(query: str, limit: int = 12) -> list[dict]:
     retrieved as text. This is what keeps a cost answer exact: the model is
     handed the row, not a paragraph that happens to contain a number.
     """
-    rows = store.corpus.get("prices", [])
+    rows = store.snapshot.corpus.get("prices", [])
     if not rows:
         return []
 

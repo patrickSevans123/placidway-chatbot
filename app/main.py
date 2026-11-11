@@ -12,10 +12,9 @@ from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, EmailStr, Field
 
-from . import db
+from . import db, refresh
 from .answer import answer as generate_answer
 from .config import ROOT, settings
-from .ingest import build as build_corpus
 from .sources import SOURCES
 from .store import store
 
@@ -101,6 +100,7 @@ def health():
         "model": settings.llm_model,
         "dense_retrieval": store.dense_ready,
         "last_ingest": corpus.get("built_at"),
+        "refresh": refresh.status(),
         "stats": db.stats(),
     }
 
@@ -194,19 +194,29 @@ def _require_admin(token: str | None) -> None:
 
 
 @app.post("/api/admin/refresh")
-def refresh(x_admin_token: str | None = Header(default=None)):
-    """Re-crawl the seven pages and rebuild the index without a restart."""
+def refresh_now(
+    force: bool = False,
+    x_admin_token: str | None = Header(default=None),
+):
+    """Re-check the seven pages and rebuild the index only if something changed.
+
+    Returns 409 when another refresh is already running, and 503 when the new
+    corpus failed the sanity gate. In both cases the live index is untouched.
+    """
     _require_admin(x_admin_token)
-    started = time.monotonic()
-    corpus = build_corpus(offline=False, force=False)
-    store.reload()
-    return {
-        "ok": True,
-        "pages": corpus["page_count"],
-        "chunks": corpus["chunk_count"],
-        "prices": len(corpus["prices"]),
-        "seconds": round(time.monotonic() - started, 1),
-    }
+    try:
+        outcome = refresh.run(force=force)
+    except refresh.RefreshBusy as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    except refresh.RefreshRejected as exc:
+        raise HTTPException(status_code=503, detail=f"refresh rejected: {exc}") from exc
+    return outcome.as_dict()
+
+
+@app.get("/api/admin/refresh/status")
+def refresh_status(x_admin_token: str | None = Header(default=None)):
+    _require_admin(x_admin_token)
+    return refresh.status()
 
 
 @app.get("/api/admin/unanswered")

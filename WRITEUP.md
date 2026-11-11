@@ -2,14 +2,14 @@
 
 ## What I would improve with another week
 
-**A scheduled refresh with a change report.** Today the corpus is rebuilt on demand. I would run
-`app.ingest` nightly, diff the new corpus against the previous one, and post a short summary — which
-pages changed, which prices moved, which chunks appeared or disappeared. A price change on the live
-site is currently invisible until someone triggers a rebuild, and for a site whose main question is
-"how much does it cost", that is the most valuable next step.
+**A change report on top of the scheduled refresh.** The refresh now runs daily, detects which pages
+changed, and refuses to replace a corpus that lost content. What it does not do is say *what*
+changed. I would diff the two corpora and post a short summary — which prices moved, which chunks
+appeared or disappeared. For a site whose main question is "how much does it cost", a price change
+is the event worth knowing about, and right now it is only visible as a page slug in a log line.
 
-**A real evaluation set instead of twelve cases.** Twelve cases prove the pipeline works; they do not
-measure it. I would build 60–100 questions with known correct answers, split by type (cost,
+**A real evaluation set instead of fourteen cases.** Fourteen cases prove the pipeline works; they do
+not measure it. I would build 60–100 questions with known correct answers, split by type (cost,
 inclusion, comparison, refusal, adversarial), and track two numbers per release: the share of
 answers whose every claim is supported by a cited passage, and the share of refusals that should
 have been answers. Those two move in opposite directions, so tuning one without measuring the other
@@ -32,8 +32,9 @@ much shorter, and the UI already has a typing indicator to replace.
 
 - **Seven pages, hard-coded.** The crawler cannot leave the allow-list, by design. Anything outside
   those pages is refused rather than guessed.
-- **Prices are a snapshot.** The corpus is a point-in-time copy. There is no scheduled refresh and no
-  staleness warning in the answer.
+- **Prices are a snapshot.** The corpus is refreshed daily and rebuilt when a page's text changes,
+  but an answer does not say how old the price is. A price that moved this morning is quoted with
+  the same confidence as one that has not moved in a year.
 - **The refusal gate is a heuristic.** It uses IDF-weighted vocabulary overlap between the question
   and the retrieved evidence. It separates this corpus well, but it is not a calibrated probability,
   and a question that reuses the corpus vocabulary for a different purpose can slip past it. The

@@ -17,7 +17,7 @@ import math
 import logging
 import re
 import threading
-from dataclasses import dataclass
+from dataclasses import dataclass, field, replace
 from pathlib import Path
 
 import numpy as np
@@ -104,18 +104,65 @@ class Hit:
     dense_rank: int | None = None
 
 
+@dataclass(frozen=True)
+class Index:
+    """One consistent view of the corpus.
+
+    Everything a search needs lives here, so a reload builds a complete new
+    index and swaps it in with a single assignment. A reader that takes
+    ``store.snapshot`` once cannot end up with the chunk list from one build and
+    the BM25 matrix from another.
+    """
+
+    corpus: dict = field(default_factory=dict)
+    chunks: list[dict] = field(default_factory=list)
+    bm25: BM25Okapi | None = None
+    idf: dict[str, float] = field(default_factory=dict)
+    embeddings: np.ndarray | None = None
+    dense_ready: bool = False
+    corpus_hash: str = ""
+
+
 class Store:
     def __init__(self) -> None:
         self._lock = threading.Lock()
-        self.corpus: dict = {}
-        self.chunks: list[dict] = []
-        self.bm25: BM25Okapi | None = None
-        self.embeddings: np.ndarray | None = None
-        self.idf: dict[str, float] = {}
+        self._index = Index()
         self.embedder = None
-        self.dense_ready = False
-        self.corpus_hash: str = ""
         self._load()
+
+    # -- reading ---------------------------------------------------------
+    @property
+    def snapshot(self) -> Index:
+        """The current index. Read it once per request and use that object."""
+        return self._index
+
+    @property
+    def corpus(self) -> dict:
+        return self._index.corpus
+
+    @property
+    def chunks(self) -> list[dict]:
+        return self._index.chunks
+
+    @property
+    def bm25(self) -> BM25Okapi | None:
+        return self._index.bm25
+
+    @property
+    def idf(self) -> dict[str, float]:
+        return self._index.idf
+
+    @property
+    def embeddings(self) -> np.ndarray | None:
+        return self._index.embeddings
+
+    @property
+    def dense_ready(self) -> bool:
+        return self._index.dense_ready
+
+    @property
+    def corpus_hash(self) -> str:
+        return self._index.corpus_hash
 
     # -- loading ---------------------------------------------------------
     def _load(self) -> None:
@@ -126,7 +173,7 @@ class Store:
 
         raw = path.read_bytes()
         digest = hashlib.sha256(raw).hexdigest()
-        if digest == self.corpus_hash:
+        if digest == self._index.corpus_hash:
             return
 
         corpus = json.loads(raw.decode("utf-8"))
@@ -147,14 +194,16 @@ class Store:
         total = max(1, len(chunks))
         idf = {token: math.log((total + 1) / (count + 1)) + 1.0 for token, count in df.items()}
 
-        with self._lock:
-            self.corpus = corpus
-            self.chunks = chunks
-            self.bm25 = BM25Okapi(tokenized)
-            self.idf = idf
-            self.corpus_hash = digest
-            self.embeddings = None
-            self.dense_ready = False
+        # Build the whole index first, then publish it with one assignment.
+        self._index = Index(
+            corpus=corpus,
+            chunks=chunks,
+            bm25=BM25Okapi(tokenized),
+            idf=idf,
+            embeddings=None,
+            dense_ready=False,
+            corpus_hash=digest,
+        )
 
         log.info("loaded corpus: %d chunks from %d pages", len(chunks), corpus.get("page_count", 0))
         self._load_dense()
@@ -169,19 +218,22 @@ class Store:
             log.info("dense retrieval disabled (EMBEDDING_BACKEND=none)")
             return
 
+        index = self._index
+        if not index.chunks:
+            return
+
         cache = settings.embeddings_path
         if cache.exists():
             try:
                 vectors = np.load(cache)
-                if vectors.shape[0] == len(self.chunks):
-                    self.embeddings = vectors
-                    self.dense_ready = True
+                if vectors.shape[0] == len(index.chunks):
+                    self._index = replace(index, embeddings=vectors, dense_ready=True)
                     log.info("loaded cached embeddings %s", vectors.shape)
                     return
             except Exception as exc:
                 log.warning("could not read embedding cache (%s); recomputing", exc)
 
-        texts = [f"{c['page_title']} | {c['section']}\n{c['text']}" for c in self.chunks]
+        texts = [f"{c['page_title']} | {c['section']}\n{c['text']}" for c in index.chunks]
 
         if backend == "api":
             vectors = self._embed_api(texts)
@@ -198,8 +250,11 @@ class Store:
             np.save(cache, vectors)
         except OSError as exc:
             log.warning("could not cache embeddings: %s", exc)
-        self.embeddings = vectors
-        self.dense_ready = True
+
+        # Only publish if the corpus did not change while the vectors were
+        # being built; otherwise the row order would not match the chunks.
+        if self._index.corpus_hash == index.corpus_hash:
+            self._index = replace(index, embeddings=vectors, dense_ready=True)
         log.info("built embeddings %s via %s", vectors.shape, backend)
 
     def _embed_api(self, texts: list[str]) -> np.ndarray | None:
@@ -271,47 +326,51 @@ class Store:
             return None
 
     def reload(self) -> None:
-        self.corpus_hash = ""
+        # Clearing the hash makes _load read the file again even when the bytes
+        # are identical, which is what a caller asking for a reload expects.
+        self._index = replace(self._index, corpus_hash="")
         self._load()
 
     # -- search ----------------------------------------------------------
-    def bm25_search(self, query: str, k: int) -> list[tuple[int, float]]:
-        if self.bm25 is None:
+    def bm25_search(self, query: str, k: int, index: Index | None = None) -> list[tuple[int, float]]:
+        index = index or self._index
+        if index.bm25 is None:
             return []
         tokens = tokenize(expand_query(query))
         if not tokens:
             return []
-        scores = self.bm25.get_scores(tokens)
+        scores = index.bm25.get_scores(tokens)
         order = np.argsort(scores)[::-1][:k]
         return [(int(i), float(scores[i])) for i in order if scores[i] > 0]
 
-    def dense_search(self, query: str, k: int) -> list[tuple[int, float]]:
-        if not self.dense_ready or self.embeddings is None:
+    def dense_search(self, query: str, k: int, index: Index | None = None) -> list[tuple[int, float]]:
+        index = index or self._index
+        if not index.dense_ready or index.embeddings is None:
             return []
         vector = self._embed_query(query)
         if vector is None:
             return []
         vector = vector.astype(np.float32)
         vector /= np.linalg.norm(vector) + 1e-9
-        scores = self.embeddings @ vector
+        scores = index.embeddings @ vector
         order = np.argsort(scores)[::-1][:k]
         return [(int(i), float(scores[i])) for i in order]
 
     def prices_for(self, url: str | None = None) -> list[dict]:
-        rows = self.corpus.get("prices", [])
+        rows = self._index.corpus.get("prices", [])
         if url is None:
             return rows
         return [r for r in rows if r["source_url"] == url]
 
     def page_for_url(self, url: str) -> dict | None:
-        for page in self.corpus.get("pages", []):
+        for page in self._index.corpus.get("pages", []):
             if page["url"] == url:
                 return page
         return None
 
     @property
     def ready(self) -> bool:
-        return bool(self.chunks)
+        return bool(self._index.chunks)
 
 
 store = Store()
