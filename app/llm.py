@@ -8,9 +8,11 @@ event stream that some upstreams return even when `stream` was not requested.
 
 from __future__ import annotations
 
+import itertools
 import json
 import logging
 import time
+from collections.abc import Iterator
 from dataclasses import dataclass
 
 import httpx
@@ -135,3 +137,120 @@ def chat(
             continue
 
     raise LLMError(f"all models failed; last error: {last_error}")
+
+
+@dataclass
+class Delta:
+    """One piece of a streaming completion.
+
+    The final delta carries no text. It names the model that answered and how
+    long the whole stream took, so the caller can report both in the response
+    without a second call.
+    """
+
+    text: str = ""
+    model: str | None = None
+    latency_ms: int | None = None
+
+
+def _sse_deltas(first: str, rest: Iterator[str]) -> Iterator[str]:
+    for line in itertools.chain([first], rest):
+        line = line.strip()
+        if not line.startswith("data:"):
+            continue
+        payload = line[5:].strip()
+        if payload in ("", "[DONE]"):
+            continue
+        try:
+            event = json.loads(payload)
+        except json.JSONDecodeError:
+            continue
+        for choice in event.get("choices", []):
+            delta = choice.get("delta") or {}
+            content = delta.get("content")
+            if isinstance(content, str) and content:
+                yield content
+
+
+def chat_stream(
+    messages: list[dict],
+    *,
+    model: str | None = None,
+    temperature: float | None = None,
+    max_tokens: int = 900,
+    timeout: float | None = None,
+    client: httpx.Client | None = None,
+) -> Iterator[Delta]:
+    """Yield a completion as it is generated.
+
+    Only the first candidate streams. If it fails before yielding anything, the
+    non-streaming `chat()` takes over and walks the whole fallback chain. A
+    failure after the first token cannot be retried, because the browser has
+    already been shown that text; it is raised instead of silently restarted.
+    """
+    if not settings.llm_api_key:
+        raise LLMError("LLM_API_KEY is not set")
+
+    candidate = model or settings.llm_model
+    started = time.monotonic()
+    payload = {
+        "model": candidate,
+        "messages": messages,
+        "temperature": settings.llm_temperature if temperature is None else temperature,
+        "max_tokens": max_tokens,
+        "stream": True,
+    }
+
+    emitted = False
+    owns_client = client is None
+    http = client or httpx.Client(timeout=timeout or settings.llm_timeout)
+    try:
+        with http.stream(
+            "POST",
+            f"{settings.llm_base_url.rstrip('/')}/chat/completions",
+            headers={
+                "Authorization": f"Bearer {settings.llm_api_key}",
+                "Content-Type": "application/json",
+            },
+            json=payload,
+        ) as response:
+            if response.status_code >= 400:
+                response.read()
+                raise LLMError(f"HTTP {response.status_code}: {response.text[:200]}")
+
+            lines = response.iter_lines()
+            first = next((line for line in lines if line.strip()), None)
+            if first is None:
+                raise LLMError("empty completion")
+
+            if first.lstrip().startswith("data:"):
+                for piece in _sse_deltas(first, lines):
+                    emitted = True
+                    yield Delta(text=piece)
+            else:
+                # Some gateways answer a streaming request with one plain JSON
+                # body. That is a complete answer, not an error.
+                text = _parse_body("\n".join([first, *lines]))
+                if not text:
+                    raise LLMError("empty completion")
+                emitted = True
+                yield Delta(text=text)
+    except (httpx.HTTPError, LLMError) as exc:
+        if emitted:
+            raise LLMError(f"stream failed after the first token: {exc}") from exc
+        log.warning("streaming model %s failed: %s; falling back", candidate, exc)
+        result = chat(
+            messages,
+            model=model,
+            temperature=temperature,
+            max_tokens=max_tokens,
+            timeout=timeout,
+        )
+        yield Delta(text=result.text)
+        yield Delta(model=result.model, latency_ms=result.latency_ms)
+        return
+    finally:
+        if owns_client:
+            http.close()
+
+    yield Delta(model=candidate, latency_ms=int((time.monotonic() - started) * 1000))

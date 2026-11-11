@@ -1,0 +1,21 @@
+# Keep the build context to what the image actually copies. Without this,
+# every `docker build` ships the venv, the git history and the node modules
+# over the wire before a single layer is built.
+.git
+.venv
+.pytest_cache
+.ruff_cache
+.github
+**/__pycache__
+**/*.pyc
+frontend/node_modules
+frontend/.next
+frontend/out
+data/raw
+data/app.db
+data/embeddings.npy
+data/refresh_state.json
+runtime
+.env
+*.md
+AI Automation Assessment*

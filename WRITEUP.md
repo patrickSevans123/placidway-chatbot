@@ -2,51 +2,52 @@
 
 ## What I would improve with another week
 
-**Deliver the change report somewhere a person reads it.** The refresh now runs daily, detects which
-pages changed, refuses to replace a corpus that lost content, and records a diff: which prices moved,
-which chunks appeared or disappeared. That diff is only visible in `/api/admin/refresh/status`. I
-would post it to email or Slack when a price moves, because a price change on a site whose main
-question is "how much does it cost" is the one event worth interrupting someone for.
+**Replace coverage-based confidence with an off-topic classifier.** The gate
+scores IDF-weighted vocabulary overlap between the question and the retrieved
+evidence. It fails in one specific, documented way: "do you offer a hair
+transplant in Istanbul?" scores 0.86, because every word in it appears in the
+corpus. A small classifier trained on the 41 answerable and 10 unanswerable
+questions I labelled would separate those two populations far better than a
+threshold on a coverage score. This is the single change with the most effect on
+the criterion the brief weights at 20%.
 
-**A real evaluation set instead of twenty cases.** Twenty cases prove the pipeline works; they do
-not measure it. I would build 60–100 questions with known correct answers, split by type (cost,
-inclusion, comparison, refusal, adversarial), and track two numbers per release: the share of
-answers whose every claim is supported by a cited passage, and the share of refusals that should
-have been answers. Those two move in opposite directions, so tuning one without measuring the other
-is how a bot becomes either a liar or a coward.
+**Reconcile the two evaluations.** The retrieval benchmark says the dense half
+of the hybrid costs me hit@8 and makes the refusal gate leakier; the
+answer-level evaluation says removing it fails two comparison questions. Both
+are measured, both are in `docs/EVALUATION.md`, and they disagree because the
+gate threshold was calibrated against the hybrid distribution. The fix is not to
+pick a side, it is to calibrate the gate per configuration and re-measure, or
+drop the dense half after fixing the duplicate-package ranking that actually
+causes the misses.
 
-**A claim-level verifier.** The current guard checks citations and numbers deterministically, which
-catches the failure that matters most here — an invented price. It does not check whether a
-non-numeric claim is supported. A second model call that takes each sentence plus its cited chunk
-and answers "supported / contradicted / not stated" would close that gap. It costs one extra call
-per answer, so I would run it on a sample rather than on every request.
+**Check non-numeric claims with a second model.** The guard checks citations and
+amounts deterministically, which catches the failure that matters here. It does
+not check whether a sentence like "the clinic has 20 years of experience" is
+supported by the chunk it cites. A cheap second call — sentence, cited chunk,
+supported / contradicted / not stated — run on a sample rather than every
+request, would close that gap without doubling the latency of every answer.
 
-**Better handling of the video page.** The page is a list of titles. The bot can say a video exists
-and link to it, but it cannot answer "what does the patient say about recovery?". Pulling the
-YouTube transcripts for those videos and indexing them would turn a list of links into content.
-
-**Streaming responses.** Answers take 2–5 seconds. Streaming the first token would make the wait feel
-much shorter, and the UI already has a typing indicator to replace.
+**Turn the feedback into a queue.** Thumbs-down ratings are recorded but nothing
+clusters them. Grouping the down-voted questions by intent and retrieval
+confidence would show which page is missing, which is the output the content
+team can act on.
 
 ## Known limitations
 
-- **Seven pages, hard-coded.** The crawler cannot leave the allow-list, by design. Anything outside
-  those pages is refused rather than guessed.
-- **Prices are a snapshot.** The corpus is refreshed daily and rebuilt when a page's text changes,
-  but an answer does not say how old the price is. A price that moved this morning is quoted with
-  the same confidence as one that has not moved in a year.
-- **The refusal gate is a heuristic.** It uses IDF-weighted vocabulary overlap between the question
-  and the retrieved evidence. It separates this corpus well, but it is not a calibrated probability,
-  and a question that reuses the corpus vocabulary for a different purpose can slip past it. The
-  model's own instruction to refuse is the second line of defence.
-- **The numeric guard is exact-match.** It rejects any money amount that is not literally in the
-  evidence. That is the right trade-off for prices, but it also rejects a correct total the model
-  computed by adding two listed figures.
-- **One language pair at a time.** The answer is written in the visitor's language from English
-  sources. Retrieval itself is English-only, so a Spanish question is rewritten to English for
-  search. That works for Spanish and Arabic in testing, but a corpus in another language would need
-  a multilingual embedding model.
-- **Single process, in-memory index.** Fine at this size. A larger corpus needs a real vector store
-  and a shared cache across workers.
-- **No authentication on the chat endpoint.** It is a public demo, rate limiting is left to
-  Cloudflare, and the admin endpoints are disabled unless `ADMIN_TOKEN` is set.
+- **Seven pages, hard-coded.** The crawler cannot leave the allow-list. Anything
+  outside it is refused rather than guessed.
+- **Prices are a snapshot.** The corpus is rebuilt when a page's text changes,
+  and every price answer now carries "Prices checked <date>". It does not know
+  whether the page itself is stale.
+- **The refusal gate is a heuristic**, as above. The model's own instruction to
+  refuse is the second line of defence.
+- **The numeric guard is exact-match.** It reads `$18,995`, `18,995 USD`,
+  `18.995 USD` and a bare `18,995`, but a bare `18995` with no separator is not
+  treated as money. It also rejects a correct total the model computed by adding
+  two listed prices, which is the trade I would rather make than be wrong.
+- **Streaming shows text before the final guard runs.** The money filter stops an
+  unsupported price from ever appearing, but a wrong citation marker can be
+  visible for the second before a `replace` event corrects it.
+- **One language pair at a time.** Retrieval is English-only, so a Spanish or
+  Arabic question is rewritten to English for search. That works in testing; a
+  non-English corpus would need a multilingual embedding model.

@@ -1,0 +1,18 @@
+# Tooling config only. There is no build step and no packaging metadata here;
+# the project runs from source with `uvicorn` / `pytest`.
+
+[tool.ruff]
+line-length = 110
+target-version = "py312"
+
+[tool.ruff.lint]
+# Deliberately small. F catches undefined names and unused imports, E9 catches
+# syntax errors, B catches real bug patterns such as mutable defaults and
+# unreachable code. Import sorting (I) and the full E/W sets are left out on
+# purpose: turning them on days before a code review would rewrite nearly every
+# file in the repo, and a small, reviewable diff matters more than a formatter.
+select = ["F", "E9", "B"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+filterwarnings = ["ignore::DeprecationWarning"]

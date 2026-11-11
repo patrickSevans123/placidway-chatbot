@@ -17,7 +17,6 @@ import logging
 import os
 import sys
 import time
-from pathlib import Path
 
 from .chunk import chunk_page
 from .config import settings

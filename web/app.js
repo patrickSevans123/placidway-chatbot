@@ -7,6 +7,7 @@
        -> {session_id, answer, sources[], language, intent, grounded,
            show_disclaimer, show_lead_form, latency_ms}
      POST /api/lead  {session_id, name, email, message} -> {ok: true}
+     POST /api/feedback {session_id, question, rating} -> {ok: true}
      GET  /api/health -> {status, pages, chunks, model, last_ingest}
    ========================================================================== */
 
@@ -46,7 +47,11 @@
     check:
       '<svg viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="m4.5 10.5 3.6 3.6 7.4-8" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>',
     alert:
-      '<svg viewBox="0 0 20 20" aria-hidden="true" focusable="false"><circle cx="10" cy="10" r="7.2" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M10 6.2v4.6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><circle cx="10" cy="13.6" r="0.9" fill="currentColor"/></svg>'
+      '<svg viewBox="0 0 20 20" aria-hidden="true" focusable="false"><circle cx="10" cy="10" r="7.2" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M10 6.2v4.6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><circle cx="10" cy="13.6" r="0.9" fill="currentColor"/></svg>',
+    thumbUp:
+      '<svg viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="M6.5 9.2 9.6 3.6a1.6 1.6 0 0 1 2.9 1.1L12 8.1h3.3a1.4 1.4 0 0 1 1.35 1.8l-1.3 4.7a1.4 1.4 0 0 1-1.35 1H6.5" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><rect x="2.8" y="9.2" width="3.7" height="6.4" rx="1" fill="none" stroke="currentColor" stroke-width="1.4"/></svg>',
+    thumbDown:
+      '<svg viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="M6.5 10.8 9.6 16.4a1.6 1.6 0 0 0 2.9-1.1L12 11.9h3.3a1.4 1.4 0 0 0 1.35-1.8l-1.3-4.7a1.4 1.4 0 0 0-1.35-1H6.5" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><rect x="2.8" y="4.4" width="3.7" height="6.4" rx="1" fill="none" stroke="currentColor" stroke-width="1.4"/></svg>'
   };
 
   /* ---------- State ---------- */
@@ -55,7 +60,8 @@
     sessionId: readSession(),
     busy: false,
     resumeNoted: false,
-    disclaimerShown: false
+    disclaimerShown: false,
+    lastQuestion: ""
   };
 
   /* ---------- Storage helpers ---------- */
@@ -504,6 +510,59 @@
     scrollToBottom(true);
   }
 
+  /* ---------- Answer feedback ----------
+     The rating is sent with the question that produced the answer, so a thumbs
+     down in the admin table names the content that needs fixing. A failed save
+     is silent apart from the note: the visitor's opinion is worth nothing to
+     them as an error message. */
+
+  function renderFeedback(answerEl) {
+    var row = el("div", "feedback");
+    row.appendChild(el("span", "feedback-q", "Was this helpful?"));
+    var note = el("span", "feedback-note");
+    row.appendChild(makeFeedbackButton(ICONS.thumbUp, "This answer was helpful", 1, row, note));
+    row.appendChild(makeFeedbackButton(ICONS.thumbDown, "This answer was not helpful", -1, row, note));
+    row.appendChild(note);
+    answerEl.appendChild(row);
+  }
+
+  function makeFeedbackButton(icon, label, rating, row, note) {
+    var btn = el("button", "feedback-btn");
+    btn.type = "button";
+    btn.dataset.rating = String(rating);
+    btn.setAttribute("aria-label", label);
+    btn.setAttribute("aria-pressed", "false");
+    btn.title = label;
+    btn.appendChild(svgIcon(icon));
+    btn.addEventListener("click", function () {
+      chooseFeedback(row, note, rating);
+    });
+    return btn;
+  }
+
+  function chooseFeedback(row, note, rating) {
+    var buttons = row.querySelectorAll(".feedback-btn");
+    Array.prototype.forEach.call(buttons, function (btn) {
+      btn.disabled = true;
+      btn.setAttribute("aria-pressed", "false");
+    });
+
+    var chosen = row.querySelector(rating === 1 ? '[data-rating="1"]' : '[data-rating="-1"]');
+    if (chosen) {
+      chosen.classList.add("is-selected");
+      chosen.setAttribute("aria-pressed", "true");
+    }
+    note.textContent = "Thanks - noted.";
+
+    postJson("/api/feedback", {
+      session_id: state.sessionId,
+      question: state.lastQuestion,
+      rating: rating
+    }).catch(function () {
+      note.textContent = "Could not save that.";
+    });
+  }
+
   function addAssistantShell() {
     answerCounter += 1;
     var msg = el("div", "msg msg-assistant");
@@ -676,6 +735,8 @@
 
     emptyState.hidden = true;
     newChatBtn.hidden = false;
+    /* Remembered for the feedback row on the answer this question produces. */
+    state.lastQuestion = text;
     addUserMessage(text);
     setBusy(true);
     var typing = addTyping();
@@ -718,10 +779,11 @@
 
     renderSources(sources, answerEl, data.prices_checked_at);
 
+    renderFeedback(answerEl);
+
     if (data.show_lead_form) {
       renderLeadForm(answerEl);
     }
-
     maybeShowDisclaimer(data.show_disclaimer);
     scrollToBottom(true);
   }

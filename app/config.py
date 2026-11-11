@@ -59,6 +59,13 @@ class Settings:
     # --- Retrieval -------------------------------------------------------
     top_k: int = field(default_factory=lambda: _env_int("TOP_K", 8))
     candidate_k: int = field(default_factory=lambda: _env_int("CANDIDATE_K", 24))
+    # On, and the two evaluations disagree about whether it should be. The
+    # retrieval benchmark finds BM25 better at rank 8 (92.7% vs 87.8%) and at the
+    # refusal gate (7/10 vs 4/10), but the answer-level evaluation scores 24/24
+    # with the dense half on and 22/24 with it off: two comparison questions fall
+    # under the refusal threshold once the extra candidates stop lifting their
+    # coverage score. The threshold is calibrated against the hybrid
+    # distribution, so the hybrid ships and docs/EVALUATION.md records the gap.
     use_dense: bool = field(default_factory=lambda: _env_bool("USE_DENSE", True))
     # "api" uses the same OpenAI-compatible endpoint as the chat model.
     # "local" uses fastembed (optional dependency, works offline).
@@ -86,6 +93,11 @@ class Settings:
     # --- App -------------------------------------------------------------
     admin_token: str = field(default_factory=lambda: _env("ADMIN_TOKEN", ""))
     max_history_turns: int = field(default_factory=lambda: _env_int("MAX_HISTORY_TURNS", 6))
+
+    # --- Spend guards ----------------------------------------------------
+    rate_limit_enabled: bool = field(default_factory=lambda: _env_bool("RATE_LIMIT_ENABLED", True))
+    rate_limit_requests: int = field(default_factory=lambda: _env_int("RATE_LIMIT_REQUESTS", 20))
+    rate_limit_window: int = field(default_factory=lambda: _env_int("RATE_LIMIT_WINDOW", 60))
 
     @property
     def corpus_path(self) -> Path:

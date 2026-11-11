@@ -109,7 +109,11 @@ def search(query: str, top_k: int | None = None) -> RetrievalResult:
 
     fused: dict[int, Hit] = {}
 
-    for rank, (idx, score) in enumerate(bm25_hits):
+    # RRF uses the rank only, never the raw score. The two halves of the hybrid
+    # are not on a comparable scale (BM25 is unbounded, cosine is -1..1), so
+    # combining the magnitudes would let one half drown the other. The underscore
+    # names are deliberate: the score is read and thrown away.
+    for rank, (idx, _score) in enumerate(bm25_hits):
         fused[idx] = Hit(
             chunk=index.chunks[idx],
             score=1.0 / (RRF_K + rank + 1),
@@ -117,7 +121,7 @@ def search(query: str, top_k: int | None = None) -> RetrievalResult:
             bm25_rank=rank,
         )
 
-    for rank, (idx, score) in enumerate(dense_hits):
+    for rank, (idx, _score) in enumerate(dense_hits):
         contribution = 1.0 / (RRF_K + rank + 1)
         if idx in fused:
             fused[idx].score += contribution

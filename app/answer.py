@@ -16,16 +16,19 @@ from __future__ import annotations
 
 import logging
 import re
+from collections.abc import Iterator
 from dataclasses import dataclass, field
 from datetime import datetime
 
 from . import guard
 from .config import settings
+from .injection import screen
 from .intents import Analysis, analyse
-from .llm import LLMError, chat
+from .llm import LLMError, chat, chat_stream
 from .retrieve import price_rows_for_query, search
 from .sources import SOURCES
 from .store import store
+from .stream import MoneyHoldback
 
 log = logging.getLogger(__name__)
 
@@ -136,6 +139,16 @@ Return only the reply text."""
 FALLBACK_REFUSAL = (
     "I don't have that information on the PlacidWay pages I can see, so I won't guess. "
     "You can request a free quote and the PlacidWay team will answer directly."
+)
+
+# Fixed text for a message the injection screen blocks. It is written once,
+# never generated: the whole point is that this path costs no tokens and says
+# nothing about the instructions behind it. It does not repeat the visitor's
+# words, so a pattern cannot be learned from the reply.
+INJECTION_REFUSAL = (
+    "I can't help with that request. I answer questions about treatments, packages, prices "
+    "and the clinic. If you'd like to talk to a person, you can request a free quote and "
+    "the PlacidWay team will reply directly."
 )
 
 
@@ -302,8 +315,61 @@ def _contact_source() -> Source:
     )
 
 
-def answer(message: str, history: list[dict] | None = None) -> AnswerResult:
+def _injection_result(language: str) -> AnswerResult:
+    return AnswerResult(
+        answer=INJECTION_REFUSAL,
+        sources=[],
+        language=language,
+        intent="injection",
+        grounded=False,
+        show_disclaimer=False,
+        show_lead_form=True,
+        model="none",
+        latency_ms=0,
+        confidence=0.0,
+    )
+
+
+@dataclass
+class Prepared:
+    """Everything the two answer paths share up to the moment of generation.
+
+    `answer()` and `answer_stream()` differ only in how the model's text is
+    produced and delivered. Keeping the routing, retrieval and evidence assembly
+    in one place is what stops the streaming path from drifting away from the
+    reviewed one.
+    """
+
+    analysis: Analysis
+    retrieval: object
+    evidence: str
+    sources: list[Source]
+    blocks: dict[int, str]
+    price_rows: list[dict]
+    messages: list[dict]
+    user_prompt: str
+
+
+def _prepare(message: str, history: list[dict] | None = None) -> "AnswerResult | Prepared":
     history = history or []
+
+    # --- injection screen -----------------------------------------------
+    # The next line is a model call, so this check comes first: a blocked
+    # message costs nothing. Past visitor turns are screened too, because they
+    # are sent to the analysis model on every later turn, and an attack planted
+    # in turn one would otherwise be replayed in turn three.
+    check_message = screen(message)
+    if check_message.blocked:
+        log.warning("injection blocked: category=%s", check_message.category)
+        return _injection_result("en")
+    for turn in history:
+        if turn.get("role") != "user":
+            continue
+        check_turn = screen(turn.get("content") or "")
+        if check_turn.blocked:
+            log.warning("injection blocked in history: category=%s", check_turn.category)
+            return _injection_result("en")
+
     analysis: Analysis = analyse(message, history)
 
     # --- routes that never touch retrieval ------------------------------
@@ -420,25 +486,28 @@ def answer(message: str, history: list[dict] | None = None) -> AnswerResult:
         {"role": "user", "content": user_prompt},
     ]
 
-    try:
-        result = chat(messages, max_tokens=700)
-    except LLMError as exc:
-        log.error("generation failed: %s", exc)
-        return AnswerResult(
-            answer=FALLBACK_REFUSAL,
-            sources=[_contact_source()],
-            language=analysis.language,
-            intent=analysis.intent,
-            grounded=False,
-            show_disclaimer=False,
-            show_lead_form=True,
-            model="none",
-            latency_ms=0,
-            confidence=retrieval.confidence,
-            guard_issues=[f"llm error: {exc}"],
-        )
+    return Prepared(
+        analysis=analysis,
+        retrieval=retrieval,
+        evidence=evidence,
+        sources=sources,
+        blocks=blocks,
+        price_rows=price_rows,
+        messages=messages,
+        user_prompt=user_prompt,
+    )
 
-    text = result.text
+
+def _finish(prepared: Prepared, text: str, model: str, latency_ms: int) -> AnswerResult:
+    """Verify a generated answer, regenerate once, refuse if it still fails."""
+    analysis = prepared.analysis
+    retrieval = prepared.retrieval
+    evidence = prepared.evidence
+    sources = prepared.sources
+    blocks = prepared.blocks
+    price_rows = prepared.price_rows
+    user_prompt = prepared.user_prompt
+
     check = guard.check(text, evidence=evidence, source_count=len(sources), blocks=blocks)
 
     if not check.ok:
@@ -451,7 +520,8 @@ def answer(message: str, history: list[dict] | None = None) -> AnswerResult:
             retry = chat(retry_messages, max_tokens=700)
             retry_check = guard.check(retry.text, evidence=evidence, source_count=len(sources), blocks=blocks)
             if retry_check.ok:
-                text, check, result = retry.text, retry_check, retry
+                text, check = retry.text, retry_check
+                model, latency_ms = retry.model, retry.latency_ms
             else:
                 # Keep the supported sentences, drop the invented ones.
                 trimmed = guard.strip_unsupported_sentences(retry.text, evidence)
@@ -468,8 +538,8 @@ def answer(message: str, history: list[dict] | None = None) -> AnswerResult:
                         grounded=False,
                         show_disclaimer=False,
                         show_lead_form=True,
-                        model=result.model,
-                        latency_ms=result.latency_ms,
+                        model=model,
+                        latency_ms=latency_ms,
                         confidence=retrieval.confidence,
                         guard_issues=retry_check.issues,
                     )
@@ -484,8 +554,8 @@ def answer(message: str, history: list[dict] | None = None) -> AnswerResult:
                 grounded=False,
                 show_disclaimer=False,
                 show_lead_form=True,
-                model=result.model,
-                latency_ms=result.latency_ms,
+                model=model,
+                latency_ms=latency_ms,
                 confidence=retrieval.confidence,
                 guard_issues=check.issues,
             )
@@ -541,9 +611,135 @@ def answer(message: str, history: list[dict] | None = None) -> AnswerResult:
         grounded=not is_refusal,
         show_disclaimer=analysis.intent in {"medical_advice", "procedure"} and not is_refusal,
         show_lead_form=is_refusal or analysis.intent in {"cost", "comparison", "booking", "wrong_premise"},
-        model=result.model,
-        latency_ms=result.latency_ms,
+        model=model,
+        latency_ms=latency_ms,
         confidence=retrieval.confidence,
         guard_issues=[],
         prices_checked_at=_corpus_date() if price_rows and not is_refusal else None,
     )
+
+
+def _done_payload(result: AnswerResult) -> dict:
+    """The metadata the browser needs once the answer is final."""
+    return {
+        "answer": result.answer,
+        "sources": [
+            {"id": s.id, "title": s.title, "url": s.url, "page_type": s.page_type}
+            for s in result.sources
+        ],
+        "language": result.language,
+        "intent": result.intent,
+        "grounded": result.grounded,
+        "show_disclaimer": result.show_disclaimer,
+        "show_lead_form": result.show_lead_form,
+        "latency_ms": result.latency_ms,
+        "model": result.model,
+        "confidence": result.confidence,
+        "prices_checked_at": result.prices_checked_at,
+    }
+
+
+def answer(message: str, history: list[dict] | None = None) -> AnswerResult:
+    """Answer one message in one piece.
+
+    Still the path the eval uses, and the documented fallback for any client
+    that cannot read a stream.
+    """
+    prepared = _prepare(message, history)
+    if isinstance(prepared, AnswerResult):
+        return prepared
+
+    try:
+        result = chat(prepared.messages, max_tokens=700)
+    except LLMError as exc:
+        log.error("generation failed: %s", exc)
+        return AnswerResult(
+            answer=FALLBACK_REFUSAL,
+            sources=[_contact_source()],
+            language=prepared.analysis.language,
+            intent=prepared.analysis.intent,
+            grounded=False,
+            show_disclaimer=False,
+            show_lead_form=True,
+            model="none",
+            latency_ms=0,
+            confidence=prepared.retrieval.confidence,
+            guard_issues=[f"llm error: {exc}"],
+        )
+
+    return _finish(prepared, result.text, result.model, result.latency_ms)
+
+
+def answer_stream(
+    message: str, history: list[dict] | None = None
+) -> Iterator[tuple[str, dict]]:
+    """Answer one message, yielding `(event, payload)` pairs as it is produced.
+
+    The text is passed through `MoneyHoldback`, so a figure absent from the
+    evidence is held back rather than shown and then retracted. The guard still
+    runs on the finished text; when it changes the answer, a `replace` event
+    carries the corrected version and the browser swaps the message body.
+    """
+    yield ("stage", {"stage": "retrieving"})
+
+    prepared = _prepare(message, history)
+    if isinstance(prepared, AnswerResult):
+        yield ("done", _done_payload(prepared))
+        return
+
+    yield ("stage", {"stage": "drafting"})
+
+    hold = MoneyHoldback(prepared.evidence)
+    parts: list[str] = []
+    model = "none"
+    latency_ms = 0
+
+    try:
+        for delta in chat_stream(prepared.messages, max_tokens=700):
+            if delta.text:
+                parts.append(delta.text)
+                safe = hold.feed(delta.text)
+                if safe:
+                    yield ("token", {"text": safe})
+            if delta.model:
+                model = delta.model
+            if delta.latency_ms is not None:
+                latency_ms = delta.latency_ms
+    except LLMError as exc:
+        log.error("stream generation failed: %s", exc)
+        yield (
+            "done",
+            _done_payload(
+                AnswerResult(
+                    answer=FALLBACK_REFUSAL,
+                    sources=[_contact_source()],
+                    language=prepared.analysis.language,
+                    intent=prepared.analysis.intent,
+                    grounded=False,
+                    show_disclaimer=False,
+                    show_lead_form=True,
+                    model="none",
+                    latency_ms=0,
+                    confidence=prepared.retrieval.confidence,
+                    guard_issues=[f"llm error: {exc}"],
+                )
+            ),
+        )
+        return
+
+    tail, _all_ok = hold.finish()
+    if tail:
+        yield ("token", {"text": tail})
+
+    yield ("stage", {"stage": "verifying"})
+
+    streamed = "".join(parts)
+    final = _finish(prepared, streamed, model, latency_ms)
+
+    # The guard rewrites citation numbers when it collapses duplicate pages, so
+    # the streamed text and the final text differ more often than not. Sending
+    # `replace` only when they differ keeps the common case cheap.
+    if final.answer.strip() != streamed.strip():
+        yield ("replace", {"answer": final.answer})
+
+    yield ("done", _done_payload(final))

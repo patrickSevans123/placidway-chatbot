@@ -22,11 +22,20 @@ import re
 from dataclasses import dataclass, field
 
 CITATION_RE = re.compile(r"\[(\d{1,2})\]")
-# Capture the whole number token, separators included, then decide what the
-# separators mean. A Spanish answer writes 18.995 where an English one writes
-# 18,995, and both are the same price.
+# Three ways a price is written in these pages, and all three have to be caught,
+# or a model can state a figure the guard never looks at:
+#   $18,995 / US$18,995       currency prefix
+#   18,995 USD / 18.995 USD   currency suffix
+#   18,995                    bare, thousands separator only
+# The third form is how a model paraphrases a price ("the package is 18,995"),
+# and until now it slipped through every check. It is deliberately narrow: a
+# separator is required, so "3 weeks", "19 FAQs" and "2026" are never amounts.
 MONEY_RE = re.compile(r"(?:US\s*\$|\$)\s?(\d[\d.,]*)")
 MONEY_SUFFIX_RE = re.compile(r"(\d[\d.,]*)\s?(?:USD|usd|dollars?|d[oó]lares?)")
+MONEY_BARE_RE = re.compile(
+    r"(?<![\d.,])(\d{1,3}(?:,\d{3})+(?:\.\d{1,2})?|\d{1,3}(?:\.\d{3})+)(?!\d)"
+)
+MONEY_PATTERNS = (MONEY_RE, MONEY_SUFFIX_RE, MONEY_BARE_RE)
 
 
 def _to_float(raw: str) -> float | None:
@@ -80,17 +89,32 @@ class GuardResult:
     unsupported_amounts: list[float] = field(default_factory=list)
 
 
+def money_spans(text: str) -> list[tuple[int, int, float]]:
+    """Every money mention as `(start, end, value)`, left to right, no overlaps.
+
+    Spans rather than values, because the streaming filter has to remove exactly
+    the characters of an unsupported price and keep the text around it. The
+    longest match wins: in "18,995 USD" the suffix form beats the bare "18,995"
+    inside it, so the currency word is removed with the number.
+    """
+    found: list[tuple[int, int, float]] = []
+    for pattern in MONEY_PATTERNS:
+        for match in pattern.finditer(text):
+            value = _to_float(match.group(1))
+            if value is not None:
+                found.append((match.start(), match.end(), value))
+
+    found.sort(key=lambda span: (span[0], -span[1]))
+    spans: list[tuple[int, int, float]] = []
+    for span in found:
+        if spans and span[0] < spans[-1][1]:
+            continue
+        spans.append(span)
+    return spans
+
+
 def amounts_in(text: str) -> list[float]:
-    values: list[float] = []
-    for match in MONEY_RE.finditer(text):
-        value = _to_float(match.group(1))
-        if value is not None:
-            values.append(value)
-    for match in MONEY_SUFFIX_RE.finditer(text):
-        value = _to_float(match.group(1))
-        if value is not None:
-            values.append(value)
-    return values
+    return [value for _, _, value in money_spans(text)]
 
 
 def cited_ids(answer: str) -> list[int]:

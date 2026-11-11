@@ -3,6 +3,10 @@
 One file, no server. The unanswered table is the content-gap report the brief
 asks for: every question the bot could not answer, with the intent and the
 retrieval confidence, so the team can see which page is missing.
+
+The feedback table holds the visitor's own verdict on an answer. Retrieval
+confidence says how sure the bot is; a thumbs down says that a confident
+answer was still wrong, which is the signal no counter can infer.
 """
 
 from __future__ import annotations
@@ -50,6 +54,16 @@ CREATE TABLE IF NOT EXISTS leads (
     message     TEXT,
     created_at  TEXT NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS feedback (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    session_id  TEXT,
+    question    TEXT NOT NULL,
+    answer_excerpt TEXT NOT NULL,
+    rating      INTEGER NOT NULL,
+    created_at  TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_feedback_created ON feedback(created_at);
 """
 
 
@@ -137,6 +151,9 @@ def unanswered(limit: int = 100) -> list[dict]:
     return [dict(r) for r in rows]
 
 
+EXCERPT_CHARS = 200
+
+
 def add_lead(session_id: str, name: str, email: str, message: str | None) -> None:
     with connect() as conn:
         conn.execute(
@@ -145,10 +162,46 @@ def add_lead(session_id: str, name: str, email: str, message: str | None) -> Non
         )
 
 
+def add_feedback(session_id: str | None, question: str, answer_excerpt: str, rating: int) -> None:
+    """Store one thumbs up (1) or thumbs down (-1).
+
+    The excerpt is trimmed here rather than at the call site, so every writer
+    stores the same length and the admin table stays one screen wide.
+    """
+    excerpt = (answer_excerpt or "")[:EXCERPT_CHARS]
+    with connect() as conn:
+        conn.execute(
+            "INSERT INTO feedback (session_id, question, answer_excerpt, rating, created_at) "
+            "VALUES (?, ?, ?, ?, ?)",
+            (session_id, question, excerpt, int(rating), _now()),
+        )
+
+
+def feedback_summary(limit: int = 20) -> dict:
+    with connect() as conn:
+        up = conn.execute("SELECT COUNT(*) AS n FROM feedback WHERE rating = 1").fetchone()["n"]
+        down = conn.execute("SELECT COUNT(*) AS n FROM feedback WHERE rating = -1").fetchone()["n"]
+        rows = conn.execute(
+            "SELECT session_id, question, answer_excerpt, rating, created_at "
+            "FROM feedback ORDER BY id DESC LIMIT ?",
+            (limit,),
+        ).fetchall()
+    return {"up": up, "down": down, "recent": [dict(r) for r in rows]}
+
+
 def stats() -> dict:
     with connect() as conn:
         sessions = conn.execute("SELECT COUNT(*) AS n FROM sessions").fetchone()["n"]
         messages = conn.execute("SELECT COUNT(*) AS n FROM messages").fetchone()["n"]
         gaps = conn.execute("SELECT COUNT(*) AS n FROM unanswered").fetchone()["n"]
         leads = conn.execute("SELECT COUNT(*) AS n FROM leads").fetchone()["n"]
-    return {"sessions": sessions, "messages": messages, "unanswered": gaps, "leads": leads}
+        feedback_up = conn.execute("SELECT COUNT(*) AS n FROM feedback WHERE rating = 1").fetchone()["n"]
+        feedback_down = conn.execute("SELECT COUNT(*) AS n FROM feedback WHERE rating = -1").fetchone()["n"]
+    return {
+        "sessions": sessions,
+        "messages": messages,
+        "unanswered": gaps,
+        "leads": leads,
+        "feedback_up": feedback_up,
+        "feedback_down": feedback_down,
+    }

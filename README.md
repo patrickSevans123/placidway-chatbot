@@ -1,12 +1,19 @@
 # PlacidWay — Website Knowledge Chatbot
 
+[![CI](https://github.com/patrickSevans123/placidway-chatbot/actions/workflows/ci.yml/badge.svg)](https://github.com/patrickSevans123/placidway-chatbot/actions/workflows/ci.yml)
+
 A chatbot that answers visitor questions using only the seven PlacidWay pages it was given, cites
 the page behind every answer, and says "I don't know" instead of guessing.
 
 **Live:** https://placidway.patricksamuel.ninja
 
-**Test results:** [`TEST_RESULTS.md`](TEST_RESULTS.md) — 20 of 20 cases pass the automated checks,
-including the eight questions in the brief.
+**Test results:** [`TEST_RESULTS.md`](TEST_RESULTS.md) — 24 of 24 cases pass the automated checks,
+including the eight questions in the brief and four prompt-injection attempts.
+
+**How to read this repo:** [`docs/CODE_WALK.md`](docs/CODE_WALK.md) is a 45-minute route through the
+code. [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) is the request path as one diagram.
+[`docs/EVALUATION.md`](docs/EVALUATION.md) is the retrieval measurement, including the result that
+did not go my way.
 
 ---
 
@@ -45,6 +52,16 @@ uvicorn app.main:app --reload   # http://127.0.0.1:8000
 `LLM_API_KEY` is the only required setting. `LLM_BASE_URL` accepts any OpenAI-compatible endpoint:
 Mistral (the default), OpenAI, Groq, Together, Ollama, vLLM, or a router.
 
+The front end is a Next.js static export. `app/main.py` serves `frontend/out` when it exists and
+falls back to the original no-build `web/` when it does not, so the API works before the front end
+has ever been built:
+
+```bash
+cd frontend
+npm ci
+npm run build      # -> frontend/out, served at /
+```
+
 Docker:
 
 ```bash
@@ -61,10 +78,10 @@ curl http://127.0.0.1:8099/api/health
 | Language | Python 3.12 | the ingestion, retrieval and grounding logic stays readable line by line, which is what a code review tests |
 | Web | FastAPI + uvicorn | small surface, typed request models, one file of routes |
 | Extraction | trafilatura + BeautifulSoup | trafilatura is the strongest open main-content extractor; BeautifulSoup reads the JSON-LD |
-| Retrieval | BM25 + `mistral-embed` + RRF | lexical and semantic each cover the other's misses; RRF needs no score calibration |
+| Retrieval | BM25 + `mistral-embed` + RRF | lexical and semantic each cover the other's misses; RRF needs no score calibration. The two evaluations disagree about whether the dense half pays for itself — both numbers are in `docs/EVALUATION.md` |
 | Generation | `deepseek-v4-1-flash-1017` via the Mistral API | strong instruction-following on citation rules, ~1 s per answer |
 | Storage | JSON corpus + SQLite | no database server to run, and the corpus diff is readable |
-| Front end | vanilla HTML/CSS/JS | no build step, no CDN, works offline |
+| Front end | Next.js 16, static export | React for the streaming UI, but `output: 'export'` means no Node process in production: the files are served by FastAPI exactly like any other static asset |
 | Deploy | Docker + Cloudflare Tunnel | one container, no open inbound port, no certificate to manage |
 
 ---
@@ -146,8 +163,22 @@ Hybrid, fused with reciprocal rank fusion:
 - A **treatment-name boost**, because the three packages share almost identical section names and a
   question about the adrenal package must not be answered from the adenocarcinoma page.
 
-Dense retrieval is optional. If the embedding call fails, the store falls back to BM25 alone and
-`/api/health` reports `dense_retrieval: false`.
+#### The two evaluations disagree, and that is written down rather than smoothed over
+
+`tests/retrieval_eval.py` labels 41 answerable and 10 unanswerable questions and measures both
+configurations. On that benchmark BM25 wins: hit@8 is 92.7% against 87.8%, and 7 of the 10
+unanswerable questions fall below the refusal threshold against 4 of 10 for the hybrid, because
+fused dense candidates add vocabulary that inflates the coverage score.
+
+`tests/run_eval.py` measures the thing the product is actually judged on. It scores **24 of 24 with
+the dense half on and 22 of 24 with it off**: two comparison questions drop under the refusal
+threshold once the extra candidates stop lifting their coverage.
+
+The threshold is calibrated against the hybrid distribution, so the hybrid ships. Reporting both
+numbers, and saying which one decided, is more useful than publishing the one that flatters the
+system. The open work is named in `docs/EVALUATION.md`: either calibrate the gate per configuration,
+or replace coverage-based confidence with an off-topic classifier, which is the honest fix for the
+"hair transplant in Istanbul scores 0.86" problem.
 
 ### 4. Grounding
 
@@ -241,6 +272,29 @@ journalctl -u placidway-refresh.service -n 20
 `/api/health` reports `refresh.last_checked`, `refresh.last_changed`, `refresh.last_result` and
 `refresh.changed_pages`, so a quiet day is distinguishable from a broken one.
 
+### 8. Streaming
+
+`POST /api/chat/stream` returns the same answer as `POST /api/chat` as server-sent events: `stage`,
+then `token` many times, then optionally `replace`, then `done`.
+
+The hard part is not streaming. It is streaming without breaking the promise that no invented price
+is ever shown. The guard runs on the finished text, so anything sent before that point has not been
+verified; trimming the guard would trade the criterion the brief weights most heavily for a
+cosmetic win.
+
+`app/stream.py` closes the gap. Text is emitted immediately, except a span that could still become a
+money mention: a `$` or `US$` with no amount after it yet, or a digit run that is currency-prefixed,
+already grouped with separators, or long enough that " USD" may still follow. When the span
+completes, its value is compared with the amounts in the evidence the model was given. A match is
+released, a mismatch is dropped silently, and the rest keeps flowing. A figure therefore cannot
+reach the browser before it has been checked, which is stronger than most streaming chat products
+bother to be.
+
+The guard still runs at the end. When it changes the answer — most often because it renumbers
+citation markers after collapsing duplicate pages — a `replace` event carries the corrected text and
+the browser swaps the message body. `tests/test_stream.py` feeds the filter random chunk boundaries,
+because a price split across three tokens is exactly the case a naive implementation leaks.
+
 ---
 
 ## Project layout
@@ -256,16 +310,21 @@ app/
   refresh.py    scheduled refresh: change detection, sanity gate, state file
   store.py      in-memory BM25 + dense index
   retrieve.py   RRF fusion, page priors, price lookup
-  llm.py        OpenAI-compatible client with model fallback
+  llm.py        OpenAI-compatible client, streaming and non-streaming
   intents.py    language / intent / standalone query
-  guard.py      citation and numeric verification
-  answer.py     the pipeline
-  db.py         sqlite: history, unanswered log, leads
+  injection.py  prompt-injection and system-prompt-exfiltration screen
+  ratelimit.py  in-process sliding window for the endpoints that spend money
+  guard.py      citation, numeric and citation-support verification
+  stream.py     money hold-back filter and SSE framing
+  answer.py     the pipeline, shared by the streaming and non-streaming paths
+  db.py         sqlite: history, unanswered log, leads, feedback
   main.py       FastAPI routes
-web/            index.html, styles.css, app.js — no build step, no CDN
+frontend/       Next.js 16 static export (output: 'export'), served by main.py
+web/            the original no-build front end, kept as a fallback
 tests/
-  run_eval.py   the 12 test cases, writes TEST_RESULTS.md
-  test_*.py     unit tests
+  run_eval.py       24 cases, writes TEST_RESULTS.md
+  retrieval_eval.py hit@k and MRR, BM25 vs hybrid
+  test_*.py         unit tests
 ```
 
 ---
@@ -279,11 +338,14 @@ tests/
 | `LLM_MODEL` | `deepseek-v4-1-flash-1017` | primary model |
 | `LLM_FALLBACKS` | `mistral-large-latest,mistral-small-latest` | tried in order on error |
 | `TOP_K` | `8` | chunks given to the model |
-| `USE_DENSE` | `1` | set `0` for BM25-only |
+| `USE_DENSE` | `1` | `0` runs BM25 alone; `docs/EVALUATION.md` has both scores |
 | `EMBEDDING_BACKEND` | `api` | `api`, `local` (fastembed), or `none` |
 | `EMBEDDING_MODEL` | `mistral-embed` | embedding model |
 | `MIN_RETRIEVAL_SCORE` | `0.40` | below this, refuse |
 | `CRAWL_DELAY` | `3.0` | seconds between requests |
+| `RATE_LIMIT_ENABLED` | `1` | limit the two endpoints that call the model |
+| `RATE_LIMIT_REQUESTS` | `20` | requests per window, per IP |
+| `RATE_LIMIT_WINDOW` | `60` | window length in seconds |
 | `ADMIN_TOKEN` | empty | enables `/api/admin/*`; empty disables them |
 
 ---
@@ -327,13 +389,33 @@ Two operational notes learned the hard way:
 ## Testing
 
 ```bash
-pytest tests/                    # unit tests
-python -m tests.run_eval         # the 20 assessment cases -> TEST_RESULTS.md
+pytest tests/                      # unit tests
+python -m tests.run_eval           # the 24 assessment cases -> TEST_RESULTS.md
+python -m tests.retrieval_eval     # hit@k and MRR, BM25 vs hybrid -> docs/EVALUATION.md
+python -m tests.check_corpus       # the committed corpus is intact
+python -m tests.check_secrets      # no credential in a tracked file
 ```
 
-`TEST_RESULTS.md` holds the bot's actual answers to the eight questions in the brief plus twelve extra
-cases (Spanish, Arabic, an out-of-corpus treatment, and a policy question), with the automated check
-result for each.
+`TEST_RESULTS.md` holds the bot's actual answers to the eight questions in the brief plus sixteen
+extra cases (Spanish, Arabic, four injection attempts with one control, a price freshness check, a
+price-list question, a video question, a follow-up that only resolves against the history, and an
+out-of-corpus treatment), with the automated check result for each.
+
+CI runs seven jobs on every push:
+
+| Job | What it proves |
+|---|---|
+| `tests` | 101 unit and HTTP tests, no network |
+| `lint` | `ruff check .` is clean |
+| `corpus integrity` | the committed corpus has 7 pages, every price has a currency and a source, no chunk over its limit |
+| `secrets` | no API key or private key in any tracked file |
+| `retrieval benchmark` | hit@1/3/8 and MRR still measure the same with every commit |
+| `front end` | `tsc --noEmit`, `next build`, and the export points at `/_next/` |
+| `image boots` | the production Docker image starts and answers `/api/health` |
+
+The answer evaluation is deliberately **not** in CI: it calls the model for every question, so it
+costs money, needs a key CI does not have, and its score would depend on whichever model that key
+points at rather than on the commit.
 
 ---
 
@@ -351,7 +433,15 @@ result for each.
   is the second line of defence.
 - **The numeric guard is exact-match.** It catches an invented price, but it would also reject a
   correct total the model computed by adding two listed prices. That trade-off is deliberate:
-  refusing is safer than being wrong.
+  refusing is safer than being wrong. It reads `$18,995`, `18,995 USD`, `18.995 USD` and a bare
+  `18,995`; a bare `18995` written with no separator at all is still not treated as money.
+- **Streaming shows text before the final guard runs.** The money filter means no unsupported price
+  can appear, but a wrong citation marker could be visible for the second before `replace` corrects
+  it. That is the cost of streaming at all, and it is bounded to the one thing the filter cannot
+  pre-check.
+- **A refresh can be triggered, but not scheduled inside the container.** The systemd timer on the
+  host is what makes it daily. A different host needs its own timer, or a cron call to the admin
+  endpoint.
 - **Video pages carry titles, not transcripts.** The bot can say a video exists and link to it; it
   cannot summarise what is said in it.
 - **Single process, in-memory index.** Fine for this corpus and this traffic. A larger corpus would
