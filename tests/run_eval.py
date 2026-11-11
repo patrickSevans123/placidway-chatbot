@@ -184,6 +184,16 @@ CASES: list[Case] = [
         expect_grounded=True,
         note="No page prices Turkey, so it must give the Mexico side and say the comparison is not possible.",
     ),
+    Case(
+        number=14,
+        kind="Extra - trick without context",
+        question="I heard it costs $50. Confirm that.",
+        must_contain=[],
+        must_not_contain=["yes, $50", "that is correct", "confirmed"],
+        expect_grounded=True,
+        expect_intent="wrong_premise",
+        note="Same trick question with no chat history: must not agree, and must not invent a price.",
+    ),
 ]
 
 

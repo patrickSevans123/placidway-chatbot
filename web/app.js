@@ -367,6 +367,11 @@
 
     box.appendChild(leadForm);
     answerEl.appendChild(box);
+
+    // The standing "Get a free quote" banner below the conversation asks for
+    // exactly the same thing. Showing both at once splits the visitor's
+    // attention between two identical calls to action.
+    document.body.classList.add("has-inline-lead");
   }
 
   function makeField(id, labelText, type, name, required) {

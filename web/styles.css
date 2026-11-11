@@ -510,6 +510,10 @@ svg {
   line-height: 1.68;
   color: var(--ink);
   overflow-wrap: anywhere;
+  /* Cap the measure at a comfortable reading width. At the full card width the
+     answer ran to ~94 characters per line, which is hard to track. 66ch lands
+     at roughly 72 rendered characters with this font. */
+  max-width: 66ch;
 }
 
 .answer > * + * {
@@ -548,16 +552,16 @@ svg {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 1.15rem;
-  height: 1.15rem;
-  margin: 0 0.1rem;
-  padding: 0 0.28rem;
-  vertical-align: 0.32em;
+  min-width: 1.3rem;
+  height: 1.3rem;
+  margin: 0 0.12rem;
+  padding: 0 0.32rem;
+  vertical-align: 0.28em;
   border-radius: 5px;
   background: var(--accent-soft);
   color: var(--accent-strong);
   border: 1px solid var(--accent-line);
-  font-size: 0.6875rem;
+  font-size: 0.75rem;
   font-weight: 700;
   line-height: 1;
   font-variant-numeric: tabular-nums;
@@ -1030,6 +1034,12 @@ kbd {
   margin-top: 2rem;
 }
 
+/* When an inline lead form is in the transcript, the standing banner is a
+   duplicate call to action. Hide it rather than showing two. */
+.has-inline-lead .quote {
+  display: none;
+}
+
 .quote-inner {
   display: flex;
   align-items: center;
@@ -1095,7 +1105,8 @@ kbd {
 .footer-note {
   margin-top: 0.35rem;
   font-size: 0.75rem;
-  color: var(--ink-4);
+  /* --ink-4 measured 3.05:1 on white, below the 4.5:1 bar for body text. */
+  color: var(--ink-3);
   max-width: 44rem;
 }
 

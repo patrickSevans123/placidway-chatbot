@@ -314,6 +314,14 @@ def answer(message: str, history: list[dict] | None = None) -> AnswerResult:
     query = analysis.search_query or analysis.standalone_query or message
     retrieval = search(query)
 
+    if analysis.intent == "wrong_premise" and retrieval.confidence < settings.min_retrieval_score:
+        # The visitor asserted a price without naming a treatment ("I heard it
+        # costs $50, confirm that"). Refusing here is unhelpful: the pages do
+        # list prices, and the honest answer is to correct the figure. Retrieve
+        # the price pages so the model has something to correct against.
+        query = "treatment package price cost"
+        retrieval = search(query)
+
     if not retrieval.hits or retrieval.confidence < settings.min_retrieval_score:
         log.info("low retrieval confidence %.3f for %r", retrieval.confidence, query)
         text = _template(REFUSAL_PROMPT, analysis.language)
@@ -340,8 +348,9 @@ def answer(message: str, history: list[dict] | None = None) -> AnswerResult:
     if analysis.asserted_fact:
         premise = (
             f"\n\nThe visitor asserted this as fact: \"{analysis.asserted_fact}\". "
-            "Check it against the SOURCES. If the SOURCES contradict it, correct it plainly and give "
-            "the correct figure with a citation. Do not agree with it."
+            "Check it against the SOURCES. If the SOURCES contradict it, say plainly that it is not "
+            "the price shown, then give the correct package price with its currency and citation "
+            "before mentioning any other figure. Do not agree with it."
         )
 
     user_prompt = (

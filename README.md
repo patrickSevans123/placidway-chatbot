@@ -5,7 +5,7 @@ the page behind every answer, and says "I don't know" instead of guessing.
 
 **Live:** https://placidway.patricksamuel.ninja
 
-**Test results:** [`TEST_RESULTS.md`](TEST_RESULTS.md) — 13 of 13 cases pass the automated checks,
+**Test results:** [`TEST_RESULTS.md`](TEST_RESULTS.md) — 14 of 14 cases pass the automated checks,
 including the eight questions in the brief.
 
 ---
@@ -291,10 +291,10 @@ Two operational notes learned the hard way:
 
 ```bash
 pytest tests/                    # unit tests
-python -m tests.run_eval         # the 12 assessment cases -> TEST_RESULTS.md
+python -m tests.run_eval         # the 14 assessment cases -> TEST_RESULTS.md
 ```
 
-`TEST_RESULTS.md` holds the bot's actual answers to the eight questions in the brief plus four extra
+`TEST_RESULTS.md` holds the bot's actual answers to the eight questions in the brief plus six extra
 cases (Spanish, Arabic, an out-of-corpus treatment, and a policy question), with the automated check
 result for each.
 
