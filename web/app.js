@@ -267,6 +267,10 @@
       link.href = source.url;
       link.target = "_blank";
       link.rel = "noopener noreferrer";
+      // The visible text is shortened to fit the card, so expose the full
+      // address on hover and to screen readers.
+      link.title = source.url;
+      link.setAttribute("aria-label", source.title + " - " + source.url);
       link.appendChild(document.createTextNode(prettyUrl(source.url)));
       link.appendChild(svgIcon(ICONS.link));
       link.appendChild(el("span", "sr-only", " (opens in a new tab)"));
