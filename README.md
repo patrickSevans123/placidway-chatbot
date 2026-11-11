@@ -347,6 +347,7 @@ tests/
 | `RATE_LIMIT_REQUESTS` | `20` | requests per window, per IP |
 | `RATE_LIMIT_WINDOW` | `60` | window length in seconds |
 | `ADMIN_TOKEN` | empty | enables `/api/admin/*`; empty disables them |
+| `REFRESH_STATE_PATH` | empty | where the refresh history is written; empty means `data/refresh_state.json`. In a container, point it at a volume so a redeploy does not reset it |
 
 ---
 
