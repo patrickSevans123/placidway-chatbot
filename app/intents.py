@@ -44,7 +44,9 @@ Return ONLY a JSON object with these keys:
   "comparison"    - compares two treatments, clinics, countries or options
   "procedure"     - asks what a treatment is, what is included, how long it takes, recovery, side effects
   "followup"      - refers back to the previous message ("what about...", "and the recovery time?", "why?")
-  "out_of_scope"  - unrelated to PlacidWay, clinics, treatments or medical travel (weather, sport, coding, news)
+  "out_of_scope"  - has nothing to do with healthcare or medical travel at all: weather, sport, coding,
+                    news, general chit-chat. A question about a treatment that is simply not on our
+                    pages is NOT out_of_scope - use "cost", "procedure" or "general" for it.
   "medical_advice"- asks whether a treatment is safe, suitable, or right for THEIR personal condition,
                     or asks for a diagnosis, prognosis, or whether they should have surgery
   "booking"       - asks to book, schedule, reserve or confirm an appointment or a date
@@ -53,6 +55,8 @@ Return ONLY a JSON object with these keys:
 "standalone_query": the question rewritten so it makes sense with no chat history. Resolve pronouns
   and ellipsis using the history. Keep the visitor's own words where possible. If the message is
   already standalone, repeat it unchanged.
+"search_query": the same question written in ENGLISH, for searching an English knowledge base.
+  If the visitor already wrote in English, copy "standalone_query". Otherwise translate it.
 "asserted_fact": if the visitor asserted a specific fact (a price, a duration, a claim), copy it here
   verbatim. Otherwise null.
 
@@ -75,6 +79,7 @@ class Analysis:
     language: str
     intent: str
     standalone_query: str
+    search_query: str = ""
     asserted_fact: str | None = None
     source: str = "llm"
 
@@ -141,6 +146,7 @@ def analyse(message: str, history: list[dict] | None = None) -> Analysis:
 
     language = str(data.get("language") or "en").strip().lower()[:5] or "en"
     standalone = str(data.get("standalone_query") or message).strip() or message
+    search_query = str(data.get("search_query") or "").strip() or standalone
     asserted = data.get("asserted_fact")
     if not isinstance(asserted, str) or not asserted.strip():
         asserted = None
@@ -149,6 +155,7 @@ def analyse(message: str, history: list[dict] | None = None) -> Analysis:
         language=language,
         intent=intent,
         standalone_query=standalone,
+        search_query=search_query,
         asserted_fact=asserted,
         source="llm",
     )

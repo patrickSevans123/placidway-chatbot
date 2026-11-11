@@ -163,18 +163,10 @@ class Store:
         if not settings.use_dense:
             log.info("dense retrieval disabled by config")
             return
-        try:
-            from fastembed import TextEmbedding
-        except ImportError:
-            log.warning("fastembed not installed; BM25-only retrieval")
-            return
 
-        try:
-            if self.embedder is None:
-                self.embedder = TextEmbedding(model_name=settings.embedding_model)
-        except Exception as exc:  # model download or onnx runtime failure
-            log.warning("could not load embedding model (%s); BM25-only retrieval", exc)
-            self.embedder = None
+        backend = settings.embedding_backend
+        if backend == "none":
+            log.info("dense retrieval disabled (EMBEDDING_BACKEND=none)")
             return
 
         cache = settings.embeddings_path
@@ -189,16 +181,94 @@ class Store:
             except Exception as exc:
                 log.warning("could not read embedding cache (%s); recomputing", exc)
 
+        texts = [f"{c['page_title']} | {c['section']}\n{c['text']}" for c in self.chunks]
+
+        if backend == "api":
+            vectors = self._embed_api(texts)
+        else:
+            vectors = self._embed_local(texts)
+
+        if vectors is None:
+            log.warning("dense retrieval unavailable; BM25-only")
+            return
+
+        vectors = np.asarray(vectors, dtype=np.float32)
+        vectors /= np.linalg.norm(vectors, axis=1, keepdims=True) + 1e-9
         try:
-            texts = [f"{c['page_title']} | {c['section']}\n{c['text']}" for c in self.chunks]
-            vectors = np.array(list(self.embedder.embed(texts)), dtype=np.float32)
-            vectors /= np.linalg.norm(vectors, axis=1, keepdims=True) + 1e-9
             np.save(cache, vectors)
-            self.embeddings = vectors
-            self.dense_ready = True
-            log.info("built embeddings %s", vectors.shape)
+        except OSError as exc:
+            log.warning("could not cache embeddings: %s", exc)
+        self.embeddings = vectors
+        self.dense_ready = True
+        log.info("built embeddings %s via %s", vectors.shape, backend)
+
+    def _embed_api(self, texts: list[str]) -> np.ndarray | None:
+        """Embed through the OpenAI-compatible /embeddings endpoint."""
+        if not settings.llm_api_key:
+            log.warning("no LLM_API_KEY; cannot build API embeddings")
+            return None
+
+        import httpx
+
+        url = f"{settings.llm_base_url.rstrip('/')}/embeddings"
+        headers = {
+            "Authorization": f"Bearer {settings.llm_api_key}",
+            "Content-Type": "application/json",
+        }
+        out: list[list[float]] = []
+        batch = max(1, settings.embedding_batch)
+
+        try:
+            with httpx.Client(timeout=120.0) as client:
+                for start in range(0, len(texts), batch):
+                    chunk = texts[start : start + batch]
+                    response = client.post(
+                        url,
+                        headers=headers,
+                        json={"model": settings.embedding_model, "input": chunk},
+                    )
+                    if response.status_code >= 400:
+                        log.warning("embedding API returned %s: %s", response.status_code, response.text[:200])
+                        return None
+                    payload = response.json()
+                    data = sorted(payload.get("data", []), key=lambda d: d.get("index", 0))
+                    out.extend(item["embedding"] for item in data)
         except Exception as exc:
-            log.warning("embedding build failed (%s); BM25-only retrieval", exc)
+            log.warning("embedding API failed: %s", exc)
+            return None
+
+        if len(out) != len(texts):
+            log.warning("embedding count mismatch: %d vs %d", len(out), len(texts))
+            return None
+        return np.array(out, dtype=np.float32)
+
+    def _embed_local(self, texts: list[str]) -> np.ndarray | None:
+        """Embed with fastembed. Optional: only used when EMBEDDING_BACKEND=local."""
+        try:
+            from fastembed import TextEmbedding
+        except ImportError:
+            log.warning("fastembed not installed; install it or set EMBEDDING_BACKEND=api")
+            return None
+
+        try:
+            if self.embedder is None:
+                self.embedder = TextEmbedding(model_name=settings.embedding_model)
+            return np.array(list(self.embedder.embed(texts)), dtype=np.float32)
+        except Exception as exc:
+            log.warning("local embedding failed (%s)", exc)
+            return None
+
+    def _embed_query(self, query: str) -> np.ndarray | None:
+        if settings.embedding_backend == "api":
+            vectors = self._embed_api([query])
+            return vectors[0] if vectors is not None else None
+        if self.embedder is None:
+            return None
+        try:
+            return np.array(list(self.embedder.query_embed([query]))[0], dtype=np.float32)
+        except Exception as exc:
+            log.warning("query embedding failed: %s", exc)
+            return None
 
     def reload(self) -> None:
         self.corpus_hash = ""
@@ -216,13 +286,12 @@ class Store:
         return [(int(i), float(scores[i])) for i in order if scores[i] > 0]
 
     def dense_search(self, query: str, k: int) -> list[tuple[int, float]]:
-        if not self.dense_ready or self.embeddings is None or self.embedder is None:
+        if not self.dense_ready or self.embeddings is None:
             return []
-        try:
-            vector = np.array(list(self.embedder.query_embed([query]))[0], dtype=np.float32)
-        except Exception as exc:
-            log.warning("query embedding failed: %s", exc)
+        vector = self._embed_query(query)
+        if vector is None:
             return []
+        vector = vector.astype(np.float32)
         vector /= np.linalg.norm(vector) + 1e-9
         scores = self.embeddings @ vector
         order = np.argsort(scores)[::-1][:k]

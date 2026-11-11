@@ -33,6 +33,7 @@ ABSENCE_RE = re.compile(
     r"no\s+(?:price|information|details|data|mention)|"
     r"(?:don'?t|do not|doesn'?t|does not)\s+(?:have|mention|say|specify|state|list|provide)|"
     r"(?:cannot|can'?t|unable to)\s+find|"
+    r"(?:isn'?t|is not|aren'?t|are not)\s+on\s+(?:the|these|our)\s+pages|"
     r"not\s+in\s+(?:the|our)\s+(?:content|knowledge|pages|sources))\b",
     re.IGNORECASE,
 )

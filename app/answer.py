@@ -309,7 +309,9 @@ def answer(message: str, history: list[dict] | None = None) -> AnswerResult:
         )
 
     # --- retrieval ------------------------------------------------------
-    query = analysis.standalone_query or message
+    # Retrieval always runs in English, because the corpus is English. The
+    # answer is still written in the visitor's language.
+    query = analysis.search_query or analysis.standalone_query or message
     retrieval = search(query)
 
     if not retrieval.hits or retrieval.confidence < settings.min_retrieval_score:
@@ -450,9 +452,21 @@ def answer(message: str, history: list[dict] | None = None) -> AnswerResult:
     ]
 
     # A model that correctly says "this is not on the pages" has produced a
-    # refusal, not a grounded answer. Treating it the same way as a gate refusal
-    # keeps the UI state consistent and puts the question in the content-gap log.
-    is_refusal = bool(guard.ABSENCE_RE.search(text)) and not guard.amounts_in(text)
+    # refusal, not a grounded answer. But an answer that opens with real content
+    # and only notes a gap at the end is a partial answer, so the absence
+    # statement has to be in the first sentence to count.
+    #
+    # A contrast word *after* the absence statement ("...do not state X, but
+    # they do say Y") also means the answer continues with substance.
+    sentences = re.split(r"(?<=[.!?])\s+", text.strip())
+    first_sentence = sentences[0] if sentences else ""
+    absence = guard.ABSENCE_RE.search(first_sentence)
+    has_contrast = False
+    if absence:
+        tail = text[absence.end() :]
+        has_contrast = bool(re.search(r"\b(but|however|although|though|while|whereas)\b", tail, re.IGNORECASE))
+
+    is_refusal = bool(absence) and not guard.amounts_in(text) and not has_contrast
 
     return AnswerResult(
         answer=text,

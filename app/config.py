@@ -42,14 +42,14 @@ def _env_bool(name: str, default: bool) -> bool:
 @dataclass(frozen=True)
 class Settings:
     # --- LLM -------------------------------------------------------------
-    llm_base_url: str = field(default_factory=lambda: _env("LLM_BASE_URL", "http://127.0.0.1:20128/v1"))
+    llm_base_url: str = field(default_factory=lambda: _env("LLM_BASE_URL", "https://api.mistral.ai/v1"))
     llm_api_key: str = field(default_factory=lambda: _env("LLM_API_KEY", ""))
-    llm_model: str = field(default_factory=lambda: _env("LLM_MODEL", "gh/gpt-4.1"))
+    llm_model: str = field(default_factory=lambda: _env("LLM_MODEL", "deepseek-v4-1-flash-1017"))
     # Tried in order when the primary model errors out.
     llm_fallbacks: tuple[str, ...] = field(
         default_factory=lambda: tuple(
             m.strip()
-            for m in _env("LLM_FALLBACKS", "ag/gemini-3-flash,ag/gemini-3.5-flash-low,small-task").split(",")
+            for m in _env("LLM_FALLBACKS", "mistral-large-latest,mistral-small-latest").split(",")
             if m.strip()
         )
     )
@@ -60,9 +60,14 @@ class Settings:
     top_k: int = field(default_factory=lambda: _env_int("TOP_K", 8))
     candidate_k: int = field(default_factory=lambda: _env_int("CANDIDATE_K", 24))
     use_dense: bool = field(default_factory=lambda: _env_bool("USE_DENSE", True))
-    embedding_model: str = field(default_factory=lambda: _env("EMBEDDING_MODEL", "BAAI/bge-small-en-v1.5"))
+    # "api" uses the same OpenAI-compatible endpoint as the chat model.
+    # "local" uses fastembed (optional dependency, works offline).
+    # "none" disables dense retrieval entirely.
+    embedding_backend: str = field(default_factory=lambda: _env("EMBEDDING_BACKEND", "api").lower())
+    embedding_model: str = field(default_factory=lambda: _env("EMBEDDING_MODEL", "mistral-embed"))
+    embedding_batch: int = field(default_factory=lambda: _env_int("EMBEDDING_BATCH", 64))
     # Below this fused score the bot refuses instead of guessing.
-    min_retrieval_score: float = field(default_factory=lambda: _env_float("MIN_RETRIEVAL_SCORE", 0.012))
+    min_retrieval_score: float = field(default_factory=lambda: _env_float("MIN_RETRIEVAL_SCORE", 0.40))
 
     # --- Ingestion -------------------------------------------------------
     crawl_delay: float = field(default_factory=lambda: _env_float("CRAWL_DELAY", 3.0))

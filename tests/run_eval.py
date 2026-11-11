@@ -179,10 +179,10 @@ CASES: list[Case] = [
         number=13,
         kind="Extra - unsupported comparison",
         question="Is adenocarcinoma treatment cheaper in Mexico or in Turkey?",
-        must_contain=[],
+        must_contain=["turkey"],
         must_not_contain=[],
-        expect_grounded=False,
-        note="No page compares those two countries, so it must not invent a comparison.",
+        expect_grounded=True,
+        note="No page prices Turkey, so it must give the Mexico side and say the comparison is not possible.",
     ),
 ]
 

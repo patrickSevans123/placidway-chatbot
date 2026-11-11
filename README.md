@@ -5,6 +5,9 @@ the page behind every answer, and says "I don't know" instead of guessing.
 
 **Live:** https://placidway.patricksamuel.ninja
 
+**Test results:** [`TEST_RESULTS.md`](TEST_RESULTS.md) — 13 of 13 cases pass the automated checks,
+including the eight questions in the brief.
+
 ---
 
 ## What it does
@@ -40,7 +43,7 @@ uvicorn app.main:app --reload   # http://127.0.0.1:8000
 ```
 
 `LLM_API_KEY` is the only required setting. `LLM_BASE_URL` accepts any OpenAI-compatible endpoint:
-OpenAI, Groq, Together, Ollama, vLLM, or a router.
+Mistral (the default), OpenAI, Groq, Together, Ollama, vLLM, or a router.
 
 Docker:
 
@@ -48,6 +51,21 @@ Docker:
 docker compose up -d --build
 curl http://127.0.0.1:8099/api/health
 ```
+
+---
+
+## Stack and why
+
+| Piece | Choice | Why |
+|---|---|---|
+| Language | Python 3.12 | the ingestion, retrieval and grounding logic stays readable line by line, which is what a code review tests |
+| Web | FastAPI + uvicorn | small surface, typed request models, one file of routes |
+| Extraction | trafilatura + BeautifulSoup | trafilatura is the strongest open main-content extractor; BeautifulSoup reads the JSON-LD |
+| Retrieval | BM25 + `mistral-embed` + RRF | lexical and semantic each cover the other's misses; RRF needs no score calibration |
+| Generation | `deepseek-v4-1-flash-1017` via the Mistral API | strong instruction-following on citation rules, ~1 s per answer |
+| Storage | JSON corpus + SQLite | no database server to run, and the corpus diff is readable |
+| Front end | vanilla HTML/CSS/JS | no build step, no CDN, works offline |
+| Deploy | Docker + Cloudflare Tunnel | one container, no open inbound port, no certificate to manage |
 
 ---
 
@@ -98,6 +116,11 @@ Three extraction paths run on each page:
 | JSON-LD | `Offer` price + currency, `FAQPage` pairs | the site's own machine-readable claims |
 | regex over prose | prices written in sentences | catches "starts at $18,995" with its qualifier |
 
+trafilatura is pinned to 2.3.1 for a reason. Version 2.0.x returns only the headings of the
+price-comparison page — 478 characters instead of 8,916 — which silently shrinks the knowledge base
+from 183 chunks to 159 and drops 22 price rows. As a second line of defence, any page over 50 KB
+that yields under 1,500 characters of text falls back to a plain body dump.
+
 ### 2. Chunking
 
 Section-aware, not fixed-size. The markdown is split on headings, then paragraphs are packed to
@@ -113,13 +136,16 @@ Hybrid, fused with reciprocal rank fusion:
 
 - **BM25** over a lightly stemmed, stop-worded token index, with a synonym map so "cost" also
   matches "price" and "fee".
-- **Dense** vectors from `BAAI/bge-small-en-v1.5` via `fastembed` (ONNX, no PyTorch, ~130 MB).
+- **Dense** vectors from `mistral-embed` (1024 dimensions) through the same API as the chat model.
+  `EMBEDDING_BACKEND=local` switches to `fastembed` with `bge-small-en-v1.5` for offline use.
 - **RRF** (`k=60`) because BM25 scores and cosine similarities are not comparable.
 - A small **page-type prior** on top: a cost question prefers the price list, a clinic question
   prefers the profile. It is a tie-breaker, not a filter.
+- A **treatment-name boost**, because the three packages share almost identical section names and a
+  question about the adrenal package must not be answered from the adenocarcinoma page.
 
-Dense retrieval is optional. If `fastembed` is missing or the model cannot load, the store falls
-back to BM25 alone and `/api/health` reports `dense_retrieval: false`.
+Dense retrieval is optional. If the embedding call fails, the store falls back to BM25 alone and
+`/api/health` reports `dense_retrieval: false`.
 
 ### 4. Grounding
 
@@ -211,13 +237,15 @@ tests/
 
 | Variable | Default | Meaning |
 |---|---|---|
-| `LLM_BASE_URL` | `http://127.0.0.1:20128/v1` | any OpenAI-compatible endpoint |
+| `LLM_BASE_URL` | `https://api.mistral.ai/v1` | any OpenAI-compatible endpoint |
 | `LLM_API_KEY` | — | **required** |
-| `LLM_MODEL` | `gh/gpt-4.1` | primary model |
-| `LLM_FALLBACKS` | `ag/gemini-3-flash,…` | tried in order on error |
+| `LLM_MODEL` | `deepseek-v4-1-flash-1017` | primary model |
+| `LLM_FALLBACKS` | `mistral-large-latest,mistral-small-latest` | tried in order on error |
 | `TOP_K` | `8` | chunks given to the model |
 | `USE_DENSE` | `1` | set `0` for BM25-only |
-| `MIN_RETRIEVAL_SCORE` | `0.35` | below this, refuse |
+| `EMBEDDING_BACKEND` | `api` | `api`, `local` (fastembed), or `none` |
+| `EMBEDDING_MODEL` | `mistral-embed` | embedding model |
+| `MIN_RETRIEVAL_SCORE` | `0.40` | below this, refuse |
 | `CRAWL_DELAY` | `3.0` | seconds between requests |
 | `ADMIN_TOKEN` | empty | enables `/api/admin/*`; empty disables them |
 
@@ -230,10 +258,32 @@ inbound port and no TLS certificate of its own.
 
 ```bash
 docker compose up -d --build
-# tunnel ingress: placidway.example.com -> http://localhost:8099
 ```
 
-The container binds to `127.0.0.1` only; the tunnel is the public entry point.
+Then point a tunnel hostname at `http://localhost:8099`:
+
+```yaml
+# /etc/cloudflared/config.yml
+ingress:
+  - hostname: placidway.example.com
+    service: http://localhost:8099
+  - service: http_status:404
+```
+
+```bash
+cloudflared tunnel route dns <tunnel-name> placidway.example.com
+```
+
+The container binds to `127.0.0.1` only; the tunnel is the public entry point. `docker compose ps`
+and `curl localhost:8099/api/health` are the two checks that matter after a deploy.
+
+Two operational notes learned the hard way:
+
+- **Restarting `cloudflared` drops any SSH session that runs through the same tunnel.** Reconnect
+  after the restart rather than assuming the command failed.
+- **Cloudflare caches by file extension.** A 404 served once for `/app.js` stays cached at the edge
+  after the origin is fixed. The asset links carry a `?v=` query string for exactly this reason;
+  bump it when `styles.css` or `app.js` changes.
 
 ---
 
@@ -255,9 +305,13 @@ result for each.
 - **Seven pages only.** Anything outside them is refused by design. A visitor asking about dental
   implants gets an honest "not on these pages", not a guess.
 - **Prices are a snapshot.** The corpus is rebuilt on demand, not on a schedule. A price change on
-  the live site is invisible until `python -m app.ingest` runs.
-- **The confidence gate is a heuristic.** It separates this corpus well (0.09 vs 0.98) but it is a
-  fused-rank score, not a calibrated probability.
+  the live site is invisible until `python -m app.ingest` runs or `POST /api/admin/refresh` is called.
+  The corpus is baked into the image, so a redeploy resets it to the version that was built.
+- **The confidence gate is a heuristic.** It measures IDF-weighted vocabulary overlap between the
+  question and the retrieved evidence, not a calibrated probability. It separates this corpus well
+  (0.15 for "weather in Cancun" against 1.0 for a cost question), but a question that reuses the
+  corpus vocabulary for a different purpose can slip past it. The model's own instruction to refuse
+  is the second line of defence.
 - **The numeric guard is exact-match.** It catches an invented price, but it would also reject a
   correct total the model computed by adding two listed prices. That trade-off is deliberate:
   refusing is safer than being wrong.

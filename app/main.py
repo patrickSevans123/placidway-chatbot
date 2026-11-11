@@ -22,11 +22,20 @@ from .store import store
 logging.basicConfig(level=logging.INFO, format="%(levelname)-7s %(name)s: %(message)s")
 log = logging.getLogger("api")
 
-app = FastAPI(title="PlacidWay Knowledge Chatbot", version="1.0.0")
+
+class UTF8JSONResponse(JSONResponse):
+    """Declare the charset explicitly.
+
+    FastAPI's default is bare `application/json`. Older clients (PowerShell 5.1
+    among them) then decode the body as Latin-1 and mangle every non-ASCII
+    character, which turns an en dash in a price range into garbage.
+    """
+
+    media_type = "application/json; charset=utf-8"
+
+app = FastAPI(title="PlacidWay Knowledge Chatbot", version="1.0.0", default_response_class=UTF8JSONResponse)
 
 WEB_DIR = ROOT / "web"
-if WEB_DIR.exists():
-    app.mount("/static", StaticFiles(directory=WEB_DIR), name="static")
 
 
 @app.on_event("startup")
@@ -39,6 +48,25 @@ def _startup() -> None:
         store.dense_ready,
         settings.llm_model,
     )
+
+
+@app.middleware("http")
+async def cache_headers(request, call_next):
+    """Keep the HTML fresh and let the versioned assets be cached.
+
+    The site sits behind Cloudflare, which caches by file extension. Without
+    this, a 404 served once for /app.js is cached at the edge and the page stays
+    broken long after the origin is fixed.
+    """
+    response = await call_next(request)
+    path = request.url.path
+    if path.startswith("/api/"):
+        response.headers["Cache-Control"] = "no-store"
+    elif path.endswith((".css", ".js")):
+        response.headers["Cache-Control"] = "public, max-age=3600"
+    else:
+        response.headers["Cache-Control"] = "no-cache"
+    return response
 
 
 class ChatRequest(BaseModel):
@@ -191,3 +219,10 @@ def unanswered(x_admin_token: str | None = Header(default=None)):
 def admin_stats(x_admin_token: str | None = Header(default=None)):
     _require_admin(x_admin_token)
     return db.stats()
+
+
+# The front end is served from the root, not from /static, because index.html
+# references styles.css and app.js by relative path. This mount is registered
+# last so every /api route above is matched first.
+if WEB_DIR.exists():
+    app.mount("/", StaticFiles(directory=WEB_DIR, html=True), name="web")

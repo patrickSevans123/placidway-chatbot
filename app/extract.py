@@ -259,14 +259,24 @@ def extract_page(html: str, url: str, fallback_title: str) -> ExtractedPage:
         favor_recall=True,
         url=url,
     )
-    if not text:
-        # trafilatura occasionally refuses a page; fall back to a crude body dump
-        # so the page is never silently dropped from the knowledge base.
-        log.warning("trafilatura returned nothing for %s; using fallback extraction", url)
+
+    # trafilatura occasionally returns only the headings of a page, or nothing
+    # at all. A page that is 300 KB of HTML but yields under 1,500 characters of
+    # text has not been extracted, it has been mangled, so fall back to a plain
+    # body dump rather than silently shrinking the knowledge base.
+    if not text or (len(text) < 1500 and len(html) > 50_000):
+        log.warning(
+            "trafilatura returned %d chars for a %d-byte page (%s); using fallback extraction",
+            len(text or ""),
+            len(html),
+            url,
+        )
         soup = BeautifulSoup(html, "lxml")
         for tag in soup(["script", "style", "nav", "footer", "header", "noscript"]):
             tag.decompose()
-        text = soup.get_text("\n", strip=True)
+        fallback = soup.get_text("\n", strip=True)
+        if len(fallback) > len(text or ""):
+            text = fallback
 
     text = re.sub(r"\n{3,}", "\n\n", text).strip()
     blocks = _jsonld_blocks(html)

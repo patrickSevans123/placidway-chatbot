@@ -1,13 +1,20 @@
-fastapi==0.115.6
-uvicorn[standard]==0.34.0
+# Pinned to the versions this project was built and tested against.
+# trafilatura matters most: 2.0.x extracts the price-comparison page badly
+# (478 chars instead of ~8,900), which silently shrinks the knowledge base.
+fastapi==0.162.4
+uvicorn[standard]==0.54.0
 httpx==0.28.1
-trafilatura==2.0.0
-beautifulsoup4==4.12.3
-lxml==5.3.0
+trafilatura==2.3.1
+beautifulsoup4==4.15.0
+lxml==6.1.3
 rank-bm25==0.2.2
-numpy==2.2.1
-pydantic==2.10.4
-email-validator==2.2.0
-python-dotenv==1.0.1
-fastembed==0.5.1
-pytest==8.3.4
+numpy==2.5.4
+pydantic==2.14.3
+email-validator==2.3.0
+python-dotenv==1.2.4
+pytest==9.2.0
+
+# Optional: only needed when EMBEDDING_BACKEND=local (offline dense retrieval).
+# The default backend calls the same API as the chat model, so this is not
+# installed by default. Uncomment to run fully offline.
+# fastembed==0.5.1
