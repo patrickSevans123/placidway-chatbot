@@ -9,6 +9,9 @@ services:
     environment:
       DB_PATH: /app/runtime/app.db
       DATA_DIR: /app/data
+      # The refresh history lives on the mounted volume, so a redeploy does not
+      # reset "last checked" to null. The corpus itself is baked into the image.
+      REFRESH_STATE_PATH: /app/runtime/refresh_state.json
     ports:
       # Bound to loopback only: the public entry point is the Cloudflare Tunnel.
       - "127.0.0.1:8099:8000"

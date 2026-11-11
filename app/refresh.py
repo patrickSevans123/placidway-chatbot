@@ -93,7 +93,7 @@ class Outcome:
 
 
 def _state_path() -> Path:
-    return settings.data_dir / "refresh_state.json"
+    return settings.refresh_state_path
 
 
 def load_state() -> dict:

@@ -89,6 +89,13 @@ class Settings:
     # --- Storage ---------------------------------------------------------
     data_dir: Path = field(default_factory=lambda: Path(_env("DATA_DIR", str(ROOT / "data"))))
     db_path: Path = field(default_factory=lambda: Path(_env("DB_PATH", str(ROOT / "data" / "app.db"))))
+    # The refresh history is not baked into the image, so it can be moved into a
+    # volume: otherwise every redeploy resets `last_checked` to null and the
+    # admin status endpoint looks like the scheduler never ran. Empty means
+    # "next to the corpus".
+    refresh_state_override: str = field(
+        default_factory=lambda: _env("REFRESH_STATE_PATH", "")
+    )
 
     # --- App -------------------------------------------------------------
     admin_token: str = field(default_factory=lambda: _env("ADMIN_TOKEN", ""))
@@ -110,6 +117,12 @@ class Settings:
     @property
     def raw_dir(self) -> Path:
         return self.data_dir / "raw"
+
+    @property
+    def refresh_state_path(self) -> Path:
+        if self.refresh_state_override:
+            return Path(self.refresh_state_override)
+        return self.data_dir / "refresh_state.json"
 
 
 settings = Settings()
