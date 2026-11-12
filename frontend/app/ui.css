@@ -1,21 +1,15 @@
 /* ==========================================================================
-   Components. Tokens and the page ground are in globals.css.
+   Components. Tokens, type roles and the page ground are in globals.css.
 
-   One thing is the hero of a price answer: the figure. It is the only thing at
-   display size and 700 weight, and its qualifier sits beside it at 14px in
-   muted grey, as the package page prints it. Nothing on the panel is tinted,
-   gradient, shadowed or rounded beyond 4px; a hairline does the separating.
+   The look is a prepared dossier: white paper, ink rules where a card would
+   normally sit, mono for anything that is a record (labels, numbers, dates) and
+   sans for anything read as a sentence. Coral is a mark, never a field: the
+   eyebrow tick, a citation glyph, the Ask fill, the edge of a lit note.
    ========================================================================== */
 
-.panel {
-  border: 1px solid var(--hair);
-  border-radius: var(--r-card);
-  background: var(--surface);
-}
+/* ---------- Header: a masthead, not an app bar ---------- */
 
-/* ---------- Header ---------- */
-
-/* Their bar is 70px with a 2:1 logo in it, so ours is 70px too. The logo keeps
+/* Their bar is 71px with a 2:1 logo in it, so ours is 71px too. The logo keeps
    its 123x62 box in CSS as well as in the attributes: the header measures the
    same before the PNG arrives as after it. */
 .top {
@@ -34,13 +28,13 @@
   max-width: var(--page);
   margin: 0 auto;
   padding: 0 var(--gutter);
-  height: 70px;
+  height: 71px;
 }
 
 .brand {
   display: inline-flex;
   align-items: center;
-  gap: 12px;
+  gap: 14px;
   min-width: 0;
 }
 
@@ -53,13 +47,18 @@
 
 .brand-rule {
   width: 1px;
-  height: 14px;
+  height: 16px;
   background: var(--hair-strong);
   flex: none;
 }
 
 .brand-sub {
-  font-size: 14px;
+  font-family: var(--mono);
+  font-size: var(--t-label);
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  line-height: 1.4;
   color: var(--muted);
   white-space: nowrap;
 }
@@ -67,7 +66,7 @@
 .top-actions {
   display: flex;
   align-items: center;
-  gap: 20px;
+  gap: 22px;
   flex: none;
 }
 
@@ -75,13 +74,15 @@
   display: inline-flex;
   align-items: center;
   min-height: 44px;
-  font-size: 14px;
+  font-family: var(--mono);
+  font-size: 12px;
   font-weight: 500;
+  letter-spacing: 0.05em;
   color: var(--body);
 }
 
 .top-new:hover {
-  color: var(--coral-ink);
+  color: var(--coral-deep);
 }
 
 .top-link {
@@ -89,8 +90,10 @@
   align-items: center;
   gap: 4px;
   min-height: 44px;
-  font-size: 14px;
+  font-family: var(--mono);
+  font-size: 12px;
   font-weight: 500;
+  letter-spacing: 0.05em;
   color: var(--body);
   text-decoration: underline;
   text-decoration-color: var(--hair-strong);
@@ -99,7 +102,7 @@
 }
 
 .top-link:hover {
-  color: var(--coral-ink);
+  color: var(--coral-deep);
   text-decoration-color: currentColor;
 }
 
@@ -110,16 +113,18 @@
 }
 
 .top-link .tiny {
-  width: 12px;
-  height: 12px;
+  width: 11px;
+  height: 11px;
 }
 
-/* ---------- Page frame ---------- */
+/* ---------- The sheet ---------- */
 
+/* One fixed sheet, 900px, centred. Both the measure and the margin column are
+   derived from it, so the answer never reflows its own proportions. */
 .page {
   max-width: var(--page);
   margin: 0 auto;
-  padding: 32px var(--gutter) 40px;
+  padding: 36px var(--gutter) 48px;
 }
 
 .layout {
@@ -132,152 +137,377 @@
   min-width: 0;
 }
 
-@media (min-width: 1040px) {
-  .layout {
-    grid-template-columns: minmax(0, 1fr) 300px;
+/* Only the opening is two-column: the dossier, and the seven pages beside it. */
+@media (min-width: 880px) {
+  .layout-index {
+    grid-template-columns: minmax(0, 1fr) 292px;
     gap: 56px;
     align-items: start;
   }
 }
 
-/* ---------- Empty state: headline over a row of bordered cards ---------- */
+/* ---------- Opening: eyebrow, headline, one sentence ---------- */
+
+.eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--mono);
+  font-size: var(--t-label);
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  line-height: 1.4;
+  color: var(--muted);
+  animation: rise 520ms var(--ease) backwards;
+}
+
+.eyebrow-tick {
+  width: 6px;
+  height: 6px;
+  background: var(--coral);
+  flex: none;
+}
 
 .intro-title {
-  font-size: 26px;
-  font-weight: 700;
-  line-height: 1.25;
-  letter-spacing: -0.015em;
+  margin-top: 16px;
+  /* 11em = 396px at the 36px display size: between "What cancer treatment"
+     (369px) and that line plus " at" (408px), so the headline breaks at its
+     clause boundary at every clamp step instead of leaving "at" dangling. */
+  max-width: 11em;
+  font-size: var(--t-display);
+  font-weight: 600;
+  line-height: 1.12;
+  letter-spacing: -0.022em;
   color: var(--ink);
+  /* `pretty`, not `balance`: measured at 1280, balance splits this headline
+     after "cancer" (201px / 365px), pretty splits it after "treatment"
+     (369px / 197px), which is the clause boundary. */
+  text-wrap: pretty;
+  animation: rise 520ms var(--ease) 70ms backwards;
 }
 
 .intro-lede {
-  margin-top: 8px;
-  max-width: 56ch;
-  font-size: 16px;
+  margin-top: 14px;
+  max-width: 48ch;
+  font-size: var(--t-lead);
+  line-height: 1.55;
+  color: var(--muted);
+  animation: rise 520ms var(--ease) 150ms backwards;
+}
+
+.empty {
+  margin-top: 0;
+}
+
+/* ---------- The docket: two programmes, two figures ---------- */
+
+/* The only 2px ink rule on the opening. It draws itself in from the left, which
+   is the one gesture this page makes on arrival. */
+.docket {
+  position: relative;
+  margin-top: 34px;
+  padding-top: 18px;
+  animation: rise 520ms var(--ease) 210ms backwards;
+}
+
+.docket::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--ink);
+  transform: scaleX(0);
+  transform-origin: left center;
+  animation: rule 620ms var(--ease) 200ms forwards;
+}
+
+.docket-head {
+  font-family: var(--mono);
+  font-size: var(--t-label);
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  line-height: 1.4;
+  color: var(--muted);
+}
+
+.docket-list {
+  margin-top: 10px;
+  border-bottom: 1px solid var(--hair);
+}
+
+.docket-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 0;
+  border-top: 1px solid var(--hair);
+}
+
+.docket-term {
+  font-size: var(--t-body);
+  line-height: 1.4;
+  color: var(--body);
+}
+
+.docket-value {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  min-width: 0;
+}
+
+.docket-amount {
+  font-family: var(--mono);
+  font-size: var(--t-figure);
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: -0.03em;
+  color: var(--ink);
+}
+
+.docket-cur {
+  font-family: var(--mono);
+  font-size: var(--t-label);
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  line-height: 1;
+  color: var(--muted);
+}
+
+.docket-note {
+  margin-top: 12px;
+  max-width: 52ch;
+  font-size: var(--t-small);
   line-height: 1.55;
   color: var(--muted);
 }
 
-.empty {
-  margin-top: 24px;
-}
+/* ---------- Three questions, set as rows ---------- */
 
 .starters {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: 12px;
-  margin-top: 16px;
+  margin-top: 40px;
+  animation: rise 520ms var(--ease) 280ms backwards;
 }
 
-@media (min-width: 680px) {
-  .starters {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
+.starters-head {
+  padding-top: 12px;
+  border-top: 1px solid var(--hair-strong);
+  font-family: var(--mono);
+  font-size: var(--t-label);
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  line-height: 1.4;
+  color: var(--muted);
 }
 
-.starter {
+.prompt-list {
   display: grid;
-  grid-template-columns: 32px minmax(0, 1fr) 16px;
+}
+
+/* A row, not a card: a full-width hit area, a numbered margin, one hairline. */
+.prompt {
+  display: grid;
+  grid-template-columns: 30px minmax(0, 1fr) 16px;
   align-items: start;
   gap: 0 12px;
   width: 100%;
-  height: 100%;
-  min-height: 84px;
-  padding: 16px;
-  text-align: left;
-  background: var(--surface);
-  border: 1px solid var(--hair);
-  border-radius: 10px;
-  transition: border-color 140ms ease, background-color 140ms ease;
+  padding: 13px 0;
+  border-top: 1px solid var(--hair);
 }
 
-.starter:hover {
-  border-color: var(--coral);
-  background: var(--coral-wash);
+.prompt-list li:last-child .prompt {
+  border-bottom: 1px solid var(--hair);
 }
 
-.starter-icon {
+.prompt-num {
+  font-family: var(--mono);
+  font-size: 11px;
+  line-height: 1.9;
+  letter-spacing: 0.06em;
   color: var(--faint);
-  transition: color 140ms ease;
 }
 
-.starter:hover .starter-icon {
-  color: var(--coral-ink);
-}
-
-.icon {
-  width: 24px;
-  height: 24px;
-}
-
-.starter-body {
+.prompt-body {
   display: grid;
   gap: 2px;
   min-width: 0;
 }
 
-.starter-q {
+.prompt-q {
   font-size: 15px;
-  font-weight: 600;
-  line-height: 1.4;
+  font-weight: 500;
+  line-height: 1.45;
   color: var(--ink);
   overflow-wrap: anywhere;
+  transition: color 140ms ease;
 }
 
-.starter-note {
-  font-size: var(--t-small);
-  line-height: 1.45;
+.prompt-note {
+  font-size: 12px;
+  line-height: 1.5;
   color: var(--muted);
   overflow-wrap: anywhere;
 }
 
-.starter-arrow {
-  width: 16px;
-  height: 16px;
-  margin-top: 3px;
+.prompt-arrow {
+  width: 14px;
+  height: 14px;
+  margin-top: 4px;
   color: var(--hair-strong);
-  transition: color 140ms ease, transform 160ms ease;
+  transition: color 140ms ease, transform 160ms var(--ease);
 }
 
-.starter:hover .starter-arrow {
-  color: var(--coral);
+.prompt:hover .prompt-q,
+.prompt:focus-visible .prompt-q {
+  color: var(--coral-deep);
+}
+
+.prompt:hover .prompt-arrow,
+.prompt:focus-visible .prompt-arrow {
+  color: var(--coral-ink);
   transform: translateX(2px);
+}
+
+/* ---------- The seven pages: the one tinted surface ---------- */
+
+.contents {
+  padding: 20px 20px 18px;
+  background: var(--wash);
+  animation: rise 520ms var(--ease) 240ms backwards;
+}
+
+.contents-label {
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--hair-wash);
+  font-family: var(--mono);
+  font-size: var(--t-label);
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  line-height: 1.4;
+  color: var(--muted);
+}
+
+.contents-list {
+  display: grid;
+}
+
+.contents-row {
+  display: grid;
+  grid-template-columns: 26px minmax(0, 1fr);
+  gap: 8px;
+  padding: 9px 0;
+}
+
+.contents-row + .contents-row {
+  border-top: 1px solid var(--hair-wash);
+}
+
+.contents-num {
+  font-family: var(--mono);
+  font-size: 11px;
+  line-height: 1.9;
+  color: var(--faint);
+}
+
+.contents-body {
+  display: grid;
+  gap: 1px;
+  min-width: 0;
+}
+
+.contents-title {
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.35;
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+
+.contents-note {
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--faint);
+}
+
+.contents-foot {
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid var(--hair-wash);
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--faint);
 }
 
 /* ---------- A question and its answer ---------- */
 
 .turns {
   display: grid;
-  gap: 40px;
+  gap: 52px;
 }
 
-.turn + .turn {
-  padding-top: 32px;
-  border-top: 1px solid var(--hair);
+/* Each answer opens with an ink rule: the sheet's section break. */
+.turn {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 24px;
+  padding-top: 18px;
+  border-top: 2px solid var(--ink);
+}
+
+.turn-body {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+  max-width: var(--read);
 }
 
 .turn-question {
-  font-size: 14px;
-  font-weight: 600;
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  font-size: var(--t-lead);
+  font-weight: 500;
   line-height: 1.45;
+  color: var(--ink);
+}
+
+.turn-num {
+  flex: none;
+  font-family: var(--mono);
+  font-size: 11px;
+  line-height: 1.9;
+  letter-spacing: 0.06em;
   color: var(--faint);
-  max-width: var(--read);
+}
+
+.turn-question-text {
+  min-width: 0;
   overflow-wrap: anywhere;
 }
 
-.turn-question::before {
-  content: "You asked";
-  display: block;
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--faint);
-  margin-bottom: 2px;
-}
+/* The answer is a document with an apparatus: text in the measure, the pages it
+   came from in a sticky margin column beside it. */
+@media (min-width: 880px) {
+  .turn {
+    grid-template-columns: minmax(0, 1fr) var(--margin-col);
+    gap: var(--margin-gap);
+  }
 
-.turn > * + * {
-  margin-top: 14px;
+  .sources {
+    grid-column: 2;
+    grid-row: 1;
+    align-self: start;
+    position: sticky;
+    top: 96px;
+  }
 }
 
 /* ---------- Streaming stage ---------- */
@@ -287,26 +517,27 @@
   align-items: center;
   gap: 10px;
   min-height: 20px;
-  font-size: 14px;
+  font-family: var(--mono);
+  font-size: var(--t-small);
+  line-height: 1.5;
   color: var(--muted);
 }
 
 .stage-track {
   display: inline-flex;
-  gap: 4px;
+  gap: 3px;
   flex: none;
 }
 
 .stage-step {
-  width: 20px;
-  height: 3px;
-  border-radius: 2px;
-  background: var(--hair);
+  width: 16px;
+  height: 2px;
+  background: var(--hair-strong);
   transition: background-color 240ms ease;
 }
 
 .stage-step[data-state="done"] {
-  background: var(--coral-ink);
+  background: var(--ink);
 }
 
 .stage-step[data-state="now"] {
@@ -314,16 +545,16 @@
 }
 
 .waiting {
-  font-size: 16px;
+  font-size: 15px;
   color: var(--faint);
 }
 
-/* ---------- Prose: the answer reads as a document ---------- */
+/* ---------- Prose: reading text, not chat bubbles ---------- */
 
 .prose {
   max-width: var(--read);
   font-size: var(--t-body);
-  line-height: 1.6;
+  line-height: 1.62;
   color: var(--body);
   overflow-wrap: break-word;
   text-wrap: pretty;
@@ -338,69 +569,66 @@
   color: var(--ink);
 }
 
-.prose ul,
-.prose ol.steps {
+.prose ul {
   display: grid;
   gap: 6px;
 }
 
 .prose ul li {
   position: relative;
-  padding-left: 18px;
+  padding-left: 16px;
 }
 
 .prose ul li::before {
   content: "";
   position: absolute;
   left: 2px;
-  top: 0.85em;
-  width: 6px;
+  top: 0.86em;
+  width: 5px;
   height: 1px;
   background: var(--faint);
 }
 
 .prose ol.steps {
   counter-reset: step;
+  display: grid;
+  gap: 8px;
 }
 
 .prose ol.steps li {
   counter-increment: step;
   display: grid;
-  grid-template-columns: 20px minmax(0, 1fr);
-  gap: 6px;
+  grid-template-columns: 22px minmax(0, 1fr);
+  gap: 8px;
 }
 
 .prose ol.steps li::before {
-  content: counter(step) ".";
-  font-size: 14px;
-  font-weight: 600;
+  content: counter(step, decimal-leading-zero);
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.75;
   color: var(--coral-ink);
-  font-variant-numeric: tabular-nums;
-  padding-top: 1px;
 }
 
 .prose-stream {
   white-space: pre-wrap;
 }
 
-/* ---------- Citations ---------- */
+/* ---------- Citations: a superscript in the record voice ---------- */
 
-/* A real link at every size: raised, coral-ink so small glyphs pass AA, and with
-   an underline on hover and focus so the affordance is not colour alone. The
-   padding is what makes the 11px glyph a tappable target, so the negative
-   margins pull the box back to the word it follows: "price1." reads tight. */
+/* A real link at every size: coral-ink so the 10px glyph passes AA, and an
+   underline on hover and focus so the affordance is not colour alone. */
 .cite {
-  display: inline-block;
-  min-width: 16px;
-  padding: 0 0 0 1px;
-  margin: 0 -0.06em 0 0;
-  font-size: 11px;
-  font-weight: 700;
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 500;
   line-height: 1.5;
+  letter-spacing: 0.02em;
   vertical-align: super;
   white-space: nowrap;
   color: var(--coral-ink);
-  border-radius: 3px;
+  border-radius: 2px;
   text-decoration: underline;
   text-decoration-color: transparent;
   text-decoration-thickness: 1px;
@@ -408,20 +636,14 @@
   transition: background-color 120ms ease, color 120ms ease;
 }
 
-/* A marker sits tight against the word it follows and tight against the full
-   stop after it: the padding is cancelled by a matching negative margin so
-   "price1." has no double gap, while the glyph still has its own few pixels.
-
-   It must be `inline`, not `inline-block`. An inline-block is an atomic box, and
-   Chrome will break the line before one: a long answer wrapped as "…to $30,000"
-   then a lone raised "1" on the next line, then ". For a dental implant quote".
-   Measured at 1280; `display: inline` removes the break and keeps the tight
-   spacing. */
+/* It must be `inline`, not `inline-block`: an inline-block is an atomic box and
+   Chrome will break the line before one, leaving a lone raised marker on its own
+   line. The padding is cancelled by a matching negative margin so the glyph sits
+   tight against the word it follows and the full stop after it. */
 .prose a.cite {
   display: inline;
   padding: 0 1px;
   margin: 0 -1px;
-  letter-spacing: -0.2px;
 }
 
 .cite:hover,
@@ -431,85 +653,99 @@
   text-decoration-color: currentColor;
 }
 
-/* ---------- Price: the hero of a price answer ---------- */
+/* ---------- The figure: the one display object ---------- */
 
-.price {
-  border: 1px solid var(--hair);
-  border-radius: var(--r-card);
-  padding: 18px 20px 12px;
-  background: var(--surface);
-  max-width: var(--read);
+/* Set like a printed schedule line: a mono caption, the number at display size
+   in tabular figures, the qualifier under it at reading size, one hairline to
+   close. No box, no tint: the size does the work. */
+.figure {
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--hair);
 }
 
-.price-qualifier {
-  font-size: 14px;
+.figure-label {
+  font-family: var(--mono);
+  font-size: var(--t-label);
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
   line-height: 1.4;
   color: var(--muted);
 }
 
-.price-figure {
+.figure-line {
   display: flex;
   align-items: baseline;
   flex-wrap: wrap;
-  gap: 0 8px;
+  gap: 0 10px;
+  margin-top: 6px;
 }
 
-.price-amount {
-  font-size: 40px;
-  font-weight: 700;
-  line-height: 1.05;
-  letter-spacing: -0.025em;
+.figure-amount {
+  font-family: var(--mono);
+  font-size: var(--t-figure);
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: -0.03em;
   color: var(--ink);
 }
 
-.price-currency {
-  font-size: 13px;
-  font-weight: 600;
-  letter-spacing: 0.06em;
+.figure-cur {
+  font-family: var(--mono);
+  font-size: var(--t-label);
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  line-height: 1;
+  color: var(--muted);
+}
+
+.figure-qualifier {
+  flex-basis: 100%;
+  margin-top: 6px;
+  font-size: 15px;
+  line-height: 1.5;
   color: var(--muted);
 }
 
 .price-cite {
-  vertical-align: baseline;
-  font-size: 11px;
+  font-size: 10px;
 }
 
-.price-from {
+.figure-from {
   margin-top: 6px;
   font-size: var(--t-small);
-  line-height: 1.45;
-  color: var(--muted);
+  line-height: 1.5;
+  color: var(--faint);
 }
 
-.price-from-page {
-  color: var(--body);
-}
-
-.price-toggle {
+/* A control, not a label: the mono labels on this page are uppercase and set
+   between rules, so this one is sentence case with no rule under it. Grey, not
+   ink, because it must not compete with the figure above; the chevron is the
+   only coral. */
+.figure-toggle {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: 6px;
   min-height: 44px;
-  margin-top: 6px;
-  font-size: 14px;
-  font-weight: 500;
+  margin-top: 2px;
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: 400;
+  letter-spacing: 0.01em;
   color: var(--muted);
 }
 
-/* Coral is kept for the figure's own citation and the actions that leave the
-   page. This disclosure is grey, with a coral chevron, so it cannot compete with
-   the number it sits under. */
-.price-toggle .chevron {
-  color: var(--coral-ink);
-}
-
-.price-toggle:hover {
+.figure-toggle:hover {
   color: var(--ink);
 }
 
+.figure-toggle .chevron {
+  color: var(--coral-ink);
+}
+
 .chevron {
-  width: 16px;
-  height: 16px;
+  width: 14px;
+  height: 14px;
   transition: transform 160ms ease;
 }
 
@@ -520,7 +756,6 @@
 /* ---------- Answer footer: copy, rating, provenance ---------- */
 
 .answer-foot {
-  max-width: var(--read);
   display: grid;
   gap: 10px;
 }
@@ -529,18 +764,19 @@
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 6px 16px;
+  gap: 4px 20px;
   min-height: 44px;
 }
 
 .tool {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 7px;
   min-height: 44px;
-  padding: 0 10px 0 0;
-  font-size: 14px;
+  font-family: var(--mono);
+  font-size: 12px;
   font-weight: 500;
+  letter-spacing: 0.04em;
   color: var(--muted);
 }
 
@@ -549,8 +785,8 @@
 }
 
 .copy-icon {
-  width: 16px;
-  height: 16px;
+  width: 15px;
+  height: 15px;
 }
 
 .rate-group {
@@ -560,9 +796,11 @@
 }
 
 .rate-question {
-  font-size: 14px;
-  color: var(--muted);
   margin-right: 2px;
+  font-family: var(--mono);
+  font-size: 12px;
+  line-height: 1;
+  color: var(--muted);
 }
 
 .rate {
@@ -572,7 +810,7 @@
   height: 44px;
   border: 1px solid var(--hair);
   border-radius: var(--r-control);
-  color: var(--body);
+  color: var(--muted);
   transition: border-color 120ms ease, color 120ms ease, background-color 120ms ease;
 }
 
@@ -582,7 +820,7 @@
 }
 
 .rate[aria-pressed="true"] {
-  border-color: var(--coral);
+  border-color: var(--coral-line);
   background: var(--coral-wash);
   color: var(--coral-deep);
 }
@@ -593,12 +831,14 @@
 }
 
 .thumb {
-  width: 18px;
-  height: 18px;
+  width: 17px;
+  height: 17px;
 }
 
 .rate-note {
-  font-size: var(--t-small);
+  font-family: var(--mono);
+  font-size: 12px;
+  line-height: 1.4;
   color: var(--muted);
 }
 
@@ -606,8 +846,10 @@
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 4px 8px;
-  font-size: var(--t-small);
+  gap: 4px 10px;
+  font-family: var(--mono);
+  font-size: 12px;
+  line-height: 1.6;
   color: var(--muted);
 }
 
@@ -618,24 +860,12 @@
   background: var(--hair-strong);
 }
 
-.corrected {
-  max-width: var(--read);
-  padding: 10px 14px;
-  font-size: var(--t-small);
-  line-height: 1.5;
-  color: var(--muted);
-  background: var(--wash-2);
-  border-left: 2px solid var(--hair-strong);
-  border-radius: 0 var(--r-card) var(--r-card) 0;
-}
-
 /* The quiet line that says the text was checked, in the place their
    "Medically reviewed by …" line sits on a package page. */
 .checked-line {
   display: flex;
-  align-items: center;
-  gap: 7px;
-  max-width: var(--read);
+  align-items: baseline;
+  gap: 8px;
   font-size: var(--t-small);
   line-height: 1.5;
   color: var(--muted);
@@ -647,26 +877,26 @@
   border-radius: 50%;
   background: var(--coral);
   flex: none;
+  transform: translateY(-1px);
 }
 
-/* ---------- Sources: their "About Package" panel ---------- */
+/* ---------- Margin notes: the apparatus ---------- */
 
 .sources {
   max-width: var(--read);
-  border: 1px solid var(--hair);
-  border-radius: var(--r-card);
+  min-width: 0;
 }
 
-.panel-head {
-  padding: 12px 16px;
-  border-bottom: 1px solid var(--hair);
-}
-
-.panel-title {
-  font-size: 15px;
-  font-weight: 600;
-  line-height: 1.3;
-  color: var(--ink);
+.sources-head {
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--hair-strong);
+  font-family: var(--mono);
+  font-size: var(--t-label);
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  line-height: 1.4;
+  color: var(--muted);
 }
 
 .source-list {
@@ -686,12 +916,15 @@
   border-top: 1px solid var(--hair);
 }
 
+/* The negative horizontal margin makes the tint 6px wider than the text, so the
+   2px coral edge of a lit note has room beside the number instead of sitting on
+   it. */
 .source-link {
   display: grid;
-  grid-template-columns: 24px minmax(0, 1fr);
-  gap: 10px;
-  padding: 12px 16px;
-  border-radius: 0;
+  grid-template-columns: 22px minmax(0, 1fr);
+  gap: 8px;
+  padding: 11px 6px;
+  margin: 0 -6px;
   transition: background-color 200ms ease;
 }
 
@@ -704,23 +937,22 @@
 }
 
 .source-num {
-  font-size: var(--t-small);
-  font-weight: 600;
-  line-height: 1.5;
+  font-family: var(--mono);
+  font-size: 11px;
+  line-height: 1.7;
   color: var(--faint);
 }
 
 .source-body {
   display: grid;
-  grid-template-columns: minmax(0, 1fr);
   gap: 3px;
   min-width: 0;
   max-width: 100%;
 }
 
 .source-title {
-  font-size: 15px;
-  font-weight: 600;
+  font-size: 13px;
+  font-weight: 500;
   line-height: 1.4;
   color: var(--ink);
   min-width: 0;
@@ -734,8 +966,8 @@
 
 .inline-arrow {
   display: inline-block;
-  width: 11px;
-  height: 11px;
+  width: 10px;
+  height: 10px;
   margin-left: 4px;
   color: var(--faint);
 }
@@ -745,22 +977,26 @@
   flex-wrap: wrap;
   align-items: baseline;
   gap: 2px 8px;
+  min-width: 0;
 }
 
+/* The page type was a bordered pill; here it is a stamped word in the record
+   voice, which is what it actually is. */
 .source-type {
-  font-size: 12px;
+  font-family: var(--mono);
+  font-size: 10px;
   font-weight: 500;
-  color: var(--muted);
-  border: 1px solid var(--hair);
-  border-radius: 2px;
-  padding: 0 5px;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
   line-height: 1.6;
+  color: var(--muted);
   white-space: nowrap;
 }
 
 .source-url {
-  font-size: var(--t-small);
-  line-height: 1.45;
+  font-family: var(--mono);
+  font-size: 10px;
+  line-height: 1.6;
   color: var(--faint);
   min-width: 0;
   overflow: hidden;
@@ -769,53 +1005,53 @@
   max-width: 100%;
 }
 
-/* Clicking a [n] lights the card. The pulse is a background tint plus a coral
-   left edge: no glow, no movement. */
+/* Clicking a [n] tints the note and draws a coral edge: a status mark, not
+   decoration, and no movement. */
 .source.is-lit {
   animation: lit 2400ms ease-out 1;
 }
 
 .source.is-lit .source-link {
-  background: var(--coral-wash);
-  box-shadow: inset 3px 0 0 var(--coral);
+  box-shadow: inset 2px 0 0 var(--coral);
 }
 
 /* Works without JavaScript too, because the citation is a real #source-N link. */
 .source:target {
   background: var(--coral-wash);
-  box-shadow: inset 3px 0 0 var(--coral);
+}
+
+.source:target .source-link {
+  box-shadow: inset 2px 0 0 var(--coral);
 }
 
 @keyframes lit {
   0%,
   70% {
-    background: var(--coral-wash);
+    background-color: var(--coral-wash);
   }
   100% {
-    background: transparent;
+    background-color: transparent;
   }
 }
 
 /* ---------- Notices: stopped, failed, limited ---------- */
 
 .notice {
-  max-width: var(--read);
-  padding: 16px 18px;
-  border: 1px solid var(--hair);
-  border-radius: var(--r-card);
-  background: var(--surface);
+  padding-top: 14px;
+  border-top: 1px solid var(--hair-strong);
 }
 
 .notice-title {
-  font-size: 15px;
+  font-size: var(--t-lead);
   font-weight: 600;
+  line-height: 1.4;
   color: var(--ink);
 }
 
 .notice-text {
-  margin-top: 4px;
+  margin-top: 6px;
   font-size: 15px;
-  line-height: 1.55;
+  line-height: 1.6;
   color: var(--muted);
 }
 
@@ -824,51 +1060,51 @@
   flex-wrap: wrap;
   align-items: center;
   gap: 12px;
-  margin-top: 12px;
+  margin-top: 14px;
 }
 
 .notice .button {
-  margin-top: 12px;
+  margin-top: 14px;
 }
 
 .notice-actions .button {
   margin-top: 0;
 }
 
-/* ---------- Refusal ---------- */
+/* ---------- Refusal: information, not an error ---------- */
 
+/* The turn already opens with a 2px ink rule, so the refusal carries no second
+   one: the mono lead is what marks it as a different kind of answer. */
 .refusal {
-  max-width: var(--read);
-  padding: 16px 18px;
-  border: 1px solid var(--hair);
-  border-left: 3px solid var(--ink);
-  border-radius: var(--r-card);
+  padding-top: 0;
 }
 
 .refusal-lead {
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
+  font-family: var(--mono);
+  font-size: var(--t-label);
+  font-weight: 500;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
+  line-height: 1.4;
   color: var(--ink);
 }
 
 .refusal-text {
-  margin-top: 6px;
-  font-size: 16px;
-  line-height: 1.6;
+  margin-top: 8px;
+  font-size: var(--t-body);
+  line-height: 1.62;
   color: var(--body);
 }
 
 .refusal-help {
-  margin-top: 6px;
+  margin-top: 8px;
   font-size: 15px;
-  line-height: 1.55;
+  line-height: 1.6;
   color: var(--muted);
 }
 
 .refusal .button {
-  margin-top: 14px;
+  margin-top: 16px;
 }
 
 /* ---------- Buttons ---------- */
@@ -888,8 +1124,7 @@
 }
 
 /* Filled buttons use their --light-red, not the brighter #e85a4f: white on the
-   bright coral is 3.05:1 and fails AA at every size on this page (15px/600 here,
-   18px/600 on Ask). White on #c6474c is 4.76:1. */
+   bright coral is 3.05:1 and fails AA at 15px/600. White on #c6474c is 4.77:1. */
 .button-solid {
   background: var(--coral-ink);
   color: #fff;
@@ -911,8 +1146,13 @@
 }
 
 .button:disabled {
-  opacity: 0.6;
   cursor: default;
+}
+
+.button-solid:disabled {
+  background: var(--coral-wash);
+  color: var(--coral-deep);
+  box-shadow: inset 0 0 0 1px var(--coral-line);
 }
 
 /* ---------- Quote form ---------- */
@@ -935,26 +1175,22 @@
 }
 
 .quote-sent {
+  padding-top: 14px;
+  border-top: 1px solid var(--hair-strong);
   font-size: 15px;
-  line-height: 1.55;
+  line-height: 1.6;
   color: var(--body);
-  padding: 12px 16px;
-  border: 1px solid var(--hair);
-  border-left: 3px solid var(--coral);
-  border-radius: var(--r-card);
 }
 
 .quote {
-  max-width: var(--read);
   padding: 16px 18px 18px;
-  border: 1px solid var(--hair);
-  border-radius: var(--r-card);
   background: var(--wash-2);
+  border-top: 2px solid var(--ink);
 }
 
 .quote-lead {
   font-size: 15px;
-  line-height: 1.55;
+  line-height: 1.6;
   color: var(--body);
 }
 
@@ -985,7 +1221,7 @@
 }
 
 .quote-field label {
-  font-size: 13px;
+  font-size: var(--t-small);
   font-weight: 600;
   color: var(--ink);
 }
@@ -1002,7 +1238,7 @@
   padding: 10px 12px;
   background: var(--surface);
   border: 1px solid var(--hair-strong);
-  border-radius: 6px;
+  border-radius: var(--r-control);
   font-size: 16px; /* 16px stops iOS zooming the page on focus */
   line-height: 1.4;
   color: var(--body);
@@ -1043,7 +1279,7 @@
 }
 
 .quote-note {
-  font-size: var(--t-small);
+  font-size: 12px;
   line-height: 1.5;
   color: var(--muted);
 }
@@ -1057,98 +1293,20 @@
 /* ---------- Trust line, where their accreditations row sits ---------- */
 
 .trust {
-  margin-top: 40px;
-  padding-top: 20px;
+  margin-top: 48px;
+  padding-top: 16px;
   border-top: 1px solid var(--hair);
 }
 
 .trust-line {
-  font-size: 14px;
-  line-height: 1.55;
+  font-family: var(--mono);
+  font-size: 12px;
+  line-height: 1.6;
+  letter-spacing: 0.01em;
   color: var(--muted);
 }
 
-/* ---------- Guide panel (the right column) ---------- */
-
-.guide {
-  display: none;
-}
-
-@media (min-width: 1040px) {
-  .guide {
-    display: block;
-    border: 1px solid var(--hair);
-    border-radius: var(--r-card);
-    position: sticky;
-    top: 90px;
-  }
-}
-
-.guide-body {
-  padding: 14px 16px;
-}
-
-.guide-text {
-  font-size: 14px;
-  line-height: 1.55;
-  color: var(--muted);
-}
-
-.guide-pages {
-  display: grid;
-  margin-top: 12px;
-  border-top: 1px solid var(--hair);
-}
-
-.guide-pages li {
-  display: grid;
-  grid-template-columns: 18px minmax(0, 1fr);
-  gap: 8px;
-  padding: 7px 0;
-  border-bottom: 1px solid var(--hair);
-}
-
-.guide-pages li:last-child {
-  border-bottom: 0;
-}
-
-.guide-num {
-  font-size: 12px;
-  color: var(--faint);
-  padding-top: 1px;
-}
-
-.guide-page {
-  display: grid;
-  gap: 0;
-  min-width: 0;
-}
-
-.guide-page-title {
-  font-size: 13px;
-  font-weight: 600;
-  line-height: 1.4;
-  color: var(--ink);
-}
-
-.guide-page-note {
-  font-size: 12px;
-  line-height: 1.4;
-  color: var(--faint);
-}
-
-.panel-foot {
-  padding: 12px 16px;
-  border-top: 1px solid var(--hair);
-}
-
-.guide-note {
-  font-size: 12px;
-  line-height: 1.5;
-  color: var(--muted);
-}
-
-/* ---------- Composer: a fixed field at the bottom ---------- */
+/* ---------- Composer: a field fixed to the bottom ---------- */
 
 .composer-dock {
   position: fixed;
@@ -1171,7 +1329,7 @@
   display: flex;
   align-items: flex-end;
   gap: 8px;
-  padding: 6px 6px 6px 14px;
+  padding: 5px 5px 5px 14px;
   background: var(--surface);
   border: 1px solid var(--hair-strong);
   border-radius: var(--r-control);
@@ -1193,6 +1351,7 @@
   outline: none;
   resize: none;
   background: transparent;
+  font-family: var(--sans);
   font-size: 16px; /* no zoom on focus in iOS */
   line-height: 1.45;
   color: var(--body);
@@ -1207,24 +1366,23 @@
   color: var(--muted);
 }
 
-/* Their hero CTA: coral fill, white 18px/600 label, 10px radius. The fill is
-   their --light-red for the same reason as .button-solid: 4.76:1 with white,
-   where #e85a4f is 3.05:1. */
+/* Their hero CTA: coral fill, white label. The fill is their --light-red for the
+   same reason as .button-solid: 4.77:1 with white, where #e85a4f is 3.05:1. */
 .composer-button {
   flex: none;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
+  gap: 7px;
   height: 44px;
-  padding: 0 20px;
+  padding: 0 18px;
   border-radius: var(--r-control);
   background: var(--coral-ink);
   color: #fff;
-  font-size: 18px;
+  font-size: 15px;
   font-weight: 600;
   line-height: 1;
-  transition: background-color 140ms ease, opacity 140ms ease;
+  transition: background-color 140ms ease;
 }
 
 .composer-button:hover:not(:disabled) {
@@ -1232,19 +1390,18 @@
 }
 
 .composer-arrow {
-  width: 16px;
-  height: 16px;
-  transition: transform 160ms ease;
+  width: 15px;
+  height: 15px;
+  transition: transform 160ms var(--ease);
 }
 
 .composer-button:hover:not(:disabled) .composer-arrow {
   transform: translateX(2px);
 }
 
-/* Disabled keeps the brand colour. A grey slab was the first thing on the page
-   before anyone typed, and it made the only primary action read as dead; a
-   washed coral with deep-coral text still reads as "not yet" while the one
-   accent stays on screen. The wash is their own coral wash token. */
+/* Disabled keeps the brand colour. A grey slab made the only primary action read
+   as dead; a washed coral with deep-coral text still reads as "not yet" while the
+   one accent stays on screen. */
 .composer-button:disabled {
   background: var(--coral-wash);
   color: var(--coral-deep);
@@ -1260,7 +1417,7 @@
   background: var(--surface);
   color: var(--ink);
   border: 1px solid var(--hair-strong);
-  font-size: 16px;
+  font-size: 14px;
 }
 
 .composer-stop:hover:not(:disabled) {
@@ -1268,13 +1425,13 @@
 }
 
 .stop-icon {
-  width: 12px;
-  height: 12px;
+  width: 11px;
+  height: 11px;
   color: var(--coral-ink);
 }
 
 .composer-hint {
-  margin-top: 6px;
+  margin-top: 7px;
   font-size: 12px;
   line-height: 1.5;
   color: var(--muted);
@@ -1284,44 +1441,36 @@ kbd {
   display: inline-block;
   padding: 0 4px;
   border: 1px solid var(--hair);
-  border-radius: 3px;
-  background: var(--wash-2);
-  font-family: var(--font);
-  font-size: 11px;
-  color: var(--body);
-}
-
-@media (max-width: 600px) {
-  .composer-hint {
-    display: none;
-  }
-
-  .composer-button {
-    padding: 0 18px;
-    font-size: 17px;
-  }
+  border-radius: 2px;
+  background: var(--wash);
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.02em;
+  color: var(--muted);
 }
 
 /* ---------- Footer ---------- */
 
+/* A footline, not a second section: the only rule at the bottom of the page is
+   the one above the trust line, so the status reads as a footnote to it rather
+   than as another band of furniture. */
 .foot {
-  margin-top: 40px;
-  padding-top: 16px;
-  border-top: 1px solid var(--hair);
+  margin-top: 18px;
 }
 
 .foot-line {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: var(--t-small);
+  font-family: var(--mono);
+  font-size: 12px;
+  line-height: 1.5;
   color: var(--muted);
 }
 
 .status-dot {
   width: 6px;
   height: 6px;
-  border-radius: 50%;
   background: var(--hair-strong);
   flex: none;
 }
@@ -1333,8 +1482,8 @@ kbd {
 /* ---------- Narrow screens ---------- */
 
 /* On a phone the label is dropped: the logo plus two actions already fill the
-   bar, and "New question" sat on top of the label. The logo steps down to
-   104x52, the same 2:1 box, so neither action is pushed off a 380px screen. */
+   bar. The logo steps down to 104x52, the same 2:1 box, so neither action is
+   pushed off a 380px screen. Both header actions are mono and narrower there. */
 @media (max-width: 600px) {
   .brand-rule,
   .brand-sub {
@@ -1346,65 +1495,103 @@ kbd {
     height: 52px;
   }
 
-  .top-inner {
-    padding: 0 var(--gutter);
-  }
-
   .top-actions {
     gap: 14px;
   }
 
   .top-new,
   .top-link {
-    font-size: 13px;
+    font-size: 11px;
+    letter-spacing: 0.03em;
   }
-}
 
-@media (max-width: 600px) {
+  .page {
+    padding: 24px var(--gutter) 40px;
+  }
+
   .intro-title {
-    font-size: 22px;
+    margin-top: 12px;
   }
 
-  .price {
-    padding: 14px 16px 10px;
+  .docket {
+    margin-top: 26px;
   }
 
-  .price-amount {
-    font-size: 32px;
+  .docket-note {
+    max-width: none;
   }
 
-  .turn + .turn {
-    padding-top: 24px;
+  .contents {
+    padding: 16px 16px 14px;
   }
 
   .turns {
-    gap: 32px;
+    gap: 40px;
+  }
+
+  .turn {
+    gap: 20px;
+  }
+
+  .composer-hint {
+    display: none;
+  }
+
+  .composer-button {
+    padding: 0 15px;
+  }
+}
+
+/* ---------- Motion and print ---------- */
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(7px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes rule {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
   }
 }
 
 /* Every animation is off under reduced motion. The citation still lights, it
-   just does not fade. */
+   just does not fade, and everything that rises is already in place. */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
   *::after {
     animation-duration: 0.001ms !important;
+    animation-delay: 0ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.001ms !important;
   }
 
   .source.is-lit {
     animation: none;
+    background: var(--coral-wash);
   }
 }
 
 @media print {
   .top,
   .composer-dock,
-  .guide,
+  .skip,
   .trust,
-  .answer-tools,
-  .skip {
+  .answer-tools {
     display: none !important;
+  }
+
+  .sources {
+    position: static;
   }
 }

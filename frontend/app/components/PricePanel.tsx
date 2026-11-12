@@ -2,17 +2,13 @@ import { formatAmount, type PriceLine } from "../lib/price";
 import type { Source } from "../lib/types";
 import { Chevron } from "./Icons";
 
-// The qualifier runs on from "USD" in the same line, so only its first letter is
-// lowered: "The package price" reads as the rest of that phrase, not a new
-// sentence. `text-transform` would also lowercase proper nouns, so it is done on
-// the string instead.
-function midSentence(text: string): string {
-  return text.charAt(0).toLowerCase() + text.slice(1);
-}
-
-// The house convention, copied from their package page: the figure, the currency
-// small beside it, and a quiet qualifier on the same baseline, reading the way
-// their "Price starting from" does. The figure is the largest thing on screen.
+// The figure is the one display object on a price answer. It is set like a
+// printed schedule line: a mono caption, the number at display size in tabular
+// figures, the qualifier on its own line at reading size, and one hairline under.
+// No box, no tint — the size does the work.
+//
+// The qualifier keeps its capital, because it is a line of its own: "The
+// out-patient programme", not a phrase running on from "USD".
 export function PricePanel({
   price,
   source,
@@ -29,12 +25,14 @@ export function PricePanel({
   onToggle: () => void;
 }) {
   return (
-    <div className="price">
-      <p className="price-figure">
-        <span className="price-amount tabular">{formatAmount(price.amount)}</span>
-        <span className="price-currency">{price.currency}</span>
-        <span className="price-qualifier">
-          {midSentence(price.qualifier)}
+    <div className="figure">
+      <p className="figure-label">Price</p>
+
+      <p className="figure-line">
+        <span className="figure-amount tabular">{formatAmount(price.amount)}</span>
+        <span className="figure-cur">{price.currency}</span>
+        <span className="figure-qualifier">
+          {price.qualifier}
           {source && price.cite !== null && (
             <>
               {" "}
@@ -54,11 +52,11 @@ export function PricePanel({
         </span>
       </p>
 
-      {source && <p className="price-from">From {source.title}</p>}
+      {source && <p className="figure-from">From {source.title}</p>}
 
       {hasBody && (
-        <button type="button" className="price-toggle" onClick={onToggle} aria-expanded={bodyOpen}>
-          {bodyOpen ? "Hide what else the page says" : "What else the page says"}
+        <button type="button" className="figure-toggle" onClick={onToggle} aria-expanded={bodyOpen}>
+          {bodyOpen ? "Hide what else the pages say" : "What else the pages say"}
           <Chevron open={bodyOpen} />
         </button>
       )}

@@ -2,26 +2,30 @@ import { readableUrl } from "../lib/markdown";
 import type { Source } from "../lib/types";
 import { Arrow } from "./Icons";
 
-// The source block borrows their "About Package" panel: a titled, hairline-bordered
-// block with the rows separated by rules. Each row is a real link to the page.
+// The apparatus of the document: which pages the answer above is built from.
+// On a wide screen this is the margin column beside the prose, numbered, with a
+// hairline between notes and no box around them. On a phone it follows the
+// answer as the same numbered list. Each row is a real link to the page.
 export function Sources({
   sources,
   lit,
   onCite,
+  turnId,
 }: {
   sources: Source[];
   lit: string | null;
   onCite: (sourceId: string) => void;
+  turnId: number;
 }) {
   if (!sources.length) return null;
 
   return (
-    <section className="sources" aria-labelledby="sources-title">
-      <div className="panel-head">
-        <h3 className="panel-title" id="sources-title">
-          {sources.length === 1 ? "The page this came from" : `The ${sources.length} pages this came from`}
-        </h3>
-      </div>
+    <section className="sources" aria-labelledby={`sources-${turnId}`}>
+      <h3 className="sources-head" id={`sources-${turnId}`}>
+        {sources.length === 1
+          ? "The page this came from"
+          : `The ${sources.length} pages this came from`}
+      </h3>
       <ol className="source-list">
         {sources.map((source, i) => {
           const active = lit === source.id;
@@ -34,7 +38,7 @@ export function Sources({
               aria-current={active ? "true" : undefined}
               ref={(node) => {
                 if (!node) return;
-                // A citation click scrolls the card into view once; the class
+                // A citation click scrolls the note into view once; the class
                 // change is what re-runs this for a second click on the same [n].
                 if (!active || node.dataset.seen === "1") return;
                 node.dataset.seen = "1";
@@ -50,7 +54,7 @@ export function Sources({
             >
               <a className="source-link" href={source.url} target="_blank" rel="noopener">
                 <span className="source-num tabular" aria-hidden="true">
-                  {i + 1}
+                  {String(i + 1).padStart(2, "0")}
                 </span>
                 <span className="source-body">
                   <span className="source-title">

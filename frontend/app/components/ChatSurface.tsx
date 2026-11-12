@@ -2,14 +2,14 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { API_BASE, getHealth, postFeedback } from "../lib/api";
-import { PAGE_COUNT } from "../lib/brand";
+import { PAGE_COUNT, PRICES_CHECKED } from "../lib/brand";
 import { ChatError, streamChat } from "../lib/stream";
 import type { Stage } from "../lib/types";
 import { Composer } from "./Composer";
+import { Contents } from "./Contents";
 import { EmptyState } from "./EmptyState";
 import { Header } from "./Header";
 import { TurnView } from "./Turn";
-import { guideDate, GuidePanel } from "./Guide";
 import type { HealthState, Turn } from "./conversation";
 
 const SESSION_KEY = "placidway.session_id";
@@ -260,16 +260,20 @@ export default function ChatSurface() {
       <main className="page" id="main">
         <h1 className="sr-only">PlacidWay treatment guide: cancer treatment at ITC in Tijuana</h1>
 
-        <div className="layout">
+        <div className={`layout${empty ? " layout-index" : ""}`}>
           <div className="column">
             {empty ? (
               <section className="intro" aria-labelledby="empty-title">
+                <p className="eyebrow">
+                  <span className="eyebrow-tick" aria-hidden="true" />
+                  ITC Immunity Therapy Center · Tijuana, Mexico
+                </p>
                 <h2 className="intro-title" id="empty-title">
-                  What would you like to know?
+                  What cancer treatment at ITC costs.
                 </h2>
                 <p className="intro-lede">
-                  Answers are written from {PAGE_COUNT} PlacidWay pages about the ITC Immunity
-                  Therapy Center, and each one shows the page it came from.
+                  Ask about a price, a programme, the doctors or the trip. Answers are written only
+                  from the seven PlacidWay pages each one cites.
                 </p>
                 <EmptyState onPick={(q) => void ask(q)} />
               </section>
@@ -293,7 +297,7 @@ export default function ChatSurface() {
             <TrustLine health={health} />
           </div>
 
-          <GuidePanel />
+          {empty && <Contents />}
         </div>
 
         <Footer health={health} />
@@ -327,7 +331,7 @@ function TrustLine({ health }: { health: HealthState }) {
     <section className="trust" aria-label="About these answers">
       <p className="trust-line">
         Answers come only from these {PAGE_COUNT} PlacidWay pages · Prices checked{" "}
-        <span className="tabular">{guideDate()}</span> · Not covered, we say so
+        <span className="tabular">{PRICES_CHECKED}</span> · Not covered, we say so
       </p>
     </section>
   );
@@ -336,10 +340,10 @@ function TrustLine({ health }: { health: HealthState }) {
 function Footer({ health }: { health: HealthState }) {
   const line =
     health.state === "loading"
-      ? "Checking the pages…"
+      ? "Checking the answer service…"
       : health.state === "down"
         ? "The answer service is not responding right now."
-        : `${health.pages ?? PAGE_COUNT} pages indexed · ready to answer`;
+        : "Answer service ready";
 
   return (
     <footer className="foot">

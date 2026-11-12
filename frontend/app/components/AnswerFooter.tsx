@@ -58,22 +58,30 @@ export function AnswerFooter({
         </span>
       </div>
 
-      <p className="provenance">
-        <span>
-          From <span className="tabular">{done.sources.length}</span>{" "}
-          {done.sources.length === 1 ? "page" : "pages"}
-        </span>
-        <span className="provenance-sep" aria-hidden="true" />
-        <span>
-          Answered in <span className="tabular">{seconds(done.latency_ms)}</span> s
-        </span>
-        {done.prices_checked_at && (
-          <>
-            <span className="provenance-sep" aria-hidden="true" />
-            <span>Prices checked <span className="tabular">{done.prices_checked_at}</span></span>
-          </>
-        )}
-      </p>
+      {/* A boundary answer has no page and no measured latency, so the whole
+          line is dropped rather than printed as "From 0 pages". */}
+      {(done.sources.length > 0 || done.latency_ms > 0) && (
+        <p className="provenance">
+          <span>
+            From <span className="tabular">{done.sources.length}</span>{" "}
+            {done.sources.length === 1 ? "page" : "pages"}
+          </span>
+          {done.latency_ms > 0 && (
+            <>
+              <span className="provenance-sep" aria-hidden="true" />
+              <span>
+                Answered in <span className="tabular">{seconds(done.latency_ms)}</span> s
+              </span>
+            </>
+          )}
+          {done.prices_checked_at && (
+            <>
+              <span className="provenance-sep" aria-hidden="true" />
+              <span>Prices checked <span className="tabular">{done.prices_checked_at}</span></span>
+            </>
+          )}
+        </p>
+      )}
     </div>
   );
 }

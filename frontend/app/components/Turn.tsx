@@ -13,7 +13,9 @@ import type { Turn } from "./conversation";
 const STAGES: VisibleStage[] = ["retrieving", "drafting"];
 
 // One question and everything the page says about it. No bubble: the question
-// is a small label and the answer flows as document prose, which is what this is.
+// is a numbered line and the answer flows as document prose, which is what this
+// is. On a wide screen the article is two columns — the text, and the cited
+// pages in the margin beside it.
 export function TurnView({
   turn,
   lit,
@@ -42,32 +44,50 @@ export function TurnView({
     />
   );
 
+  const done = turn.status === "done" ? turn.done : null;
+  // The sources are rendered by the article, not by the answer body, so they can
+  // sit in the margin column beside the prose rather than under it.
+  const sources: Source[] =
+    done && done.grounded && !(done.intent === "error" && (done.sources ?? []).length === 0)
+      ? Array.isArray(done.sources)
+        ? done.sources
+        : []
+      : [];
+
   return (
     <article className="turn" aria-labelledby={`q-${turn.id}`}>
-      <p className="turn-question" id={`q-${turn.id}`}>
-        {turn.question}
-      </p>
+      <div className="turn-body">
+        <p className="turn-question" id={`q-${turn.id}`}>
+          <span className="turn-num tabular" aria-hidden="true">
+            {String(turn.id).padStart(2, "0")}
+          </span>
+          <span className="turn-question-text">{turn.question}</span>
+        </p>
 
-      {turn.status === "streaming" && <Streaming turn={turn} />}
-      {turn.status === "stopped" && <StoppedNotice onRetry={onRetry} />}
-      {turn.status === "error" && <FailedNotice onRetry={onRetry} offline={false} />}
-      {turn.status === "offline" && <FailedNotice onRetry={onRetry} offline />}
-      {turn.status === "limited" && (
-        <LimitedNotice retryAfter={turn.retryAfter} onRetry={onRetry}>
-          {quote}
-        </LimitedNotice>
-      )}
-      {turn.status === "done" && turn.done && (
-        <Finished
-          turn={turn}
-          done={turn.done}
-          lit={lit}
-          onCite={onCite}
-          onRetry={onRetry}
-          onRate={onRate}
-          quote={quote}
-          quoteOpen={quoteOpen}
-        />
+        {turn.status === "streaming" && <Streaming turn={turn} />}
+        {turn.status === "stopped" && <StoppedNotice onRetry={onRetry} />}
+        {turn.status === "error" && <FailedNotice onRetry={onRetry} offline={false} />}
+        {turn.status === "offline" && <FailedNotice onRetry={onRetry} offline />}
+        {turn.status === "limited" && (
+          <LimitedNotice retryAfter={turn.retryAfter} onRetry={onRetry}>
+            {quote}
+          </LimitedNotice>
+        )}
+        {turn.status === "done" && turn.done && (
+          <Finished
+            turn={turn}
+            done={turn.done}
+            onCite={onCite}
+            onRetry={onRetry}
+            onRate={onRate}
+            quote={quote}
+            quoteOpen={quoteOpen}
+          />
+        )}
+      </div>
+
+      {sources.length > 0 && (
+        <Sources sources={sources} lit={lit} onCite={onCite} turnId={turn.id} />
       )}
     </article>
   );
@@ -98,7 +118,6 @@ function Streaming({ turn }: { turn: Turn }) {
 function Finished({
   turn,
   done,
-  lit,
   onCite,
   onRetry,
   onRate,
@@ -107,7 +126,6 @@ function Finished({
 }: {
   turn: Turn;
   done: DonePayload;
-  lit: string | null;
   onCite: (sourceId: string) => void;
   onRetry: () => void;
   onRate: (rating: 1 | -1) => void;
@@ -123,7 +141,34 @@ function Finished({
     return <ServiceFailed onRetry={onRetry} />;
   }
 
-  const showQuote = done.show_lead_form || !done.grounded;
+  const showQuote =
+    done.show_lead_form ||
+    !done.grounded ||
+    // Some answers end by telling the reader to request a quote, without the
+    // backend setting the flag (a `general` intent that runs out of page). A
+    // sentence pointing at a control that is not on the page is worse than no
+    // sentence, so the control follows the words.
+    /free quote/i.test(done.answer);
+
+  // `out_of_scope` comes back grounded with no cited page: the model answers an
+  // off-topic question with an apology. Rendering it as a normal answer claims
+  // it was "checked against the pages" when nothing was cited, so it is framed
+  // as a boundary notice instead, without the quote pitch (a coordinator cannot
+  // answer a question about the weather).
+  if (done.intent === "out_of_scope") {
+    return (
+      <>
+        <div className="refusal">
+          <p className="refusal-lead">Outside these pages</p>
+          <p className="refusal-text">{done.answer}</p>
+          <p className="refusal-help">
+            This guide covers ITC&rsquo;s treatments, prices, doctors and the trip to Tijuana.
+          </p>
+        </div>
+        <AnswerFooter turn={turn} done={done} onRate={onRate} />
+      </>
+    );
+  }
 
   if (!done.grounded) {
     return (
@@ -171,7 +216,6 @@ function Finished({
 
       <AnswerFooter turn={turn} done={done} onRate={onRate} />
       {showQuote && quote}
-      <Sources sources={sources} lit={lit} onCite={onCite} />
     </>
   );
 }
