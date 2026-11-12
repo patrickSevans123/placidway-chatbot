@@ -181,6 +181,14 @@ Rejected in this pass: a gradient (tried for the rating separator, removed), a
 second accent, and rewriting `readableUrl`, which lives outside the files this
 pass covered.
 
+### Two corrections after reading the build
+
+| What was still wrong | What changed |
+|---|---|
+| Content was sliced on a hard line where it met the fixed composer, and again where it met the sticky masthead — it read as cut off, not as continuing | Both edges dissolve into the page ground instead: a 36px white fade above the dock and a 20px one below the masthead. The dock lost its border, since the fade is now the edge. |
+| The composer placeholder repeated the lede sentence word for word | "Type a question". The lede already says what can be asked. |
+| Separators were drawn before each item, so a wrapped line could begin on a stranded dot | `provenance` and the trust line draw the dot after the clause before it, and the trust line is two spans so it wraps as clauses, not mid-phrase. |
+
 ## Files
 
 `ChatSurface` (state and shell) · `Turn` · `AnswerProse` · `PricePanel` ·
