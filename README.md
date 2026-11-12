@@ -32,6 +32,34 @@ and offers the free quote form. It does not invent a price.
 
 ---
 
+## Coverage of the brief
+
+Every must-have and nice-to-have from the assessment, and where to check it. The
+answers themselves are in [`TEST_RESULTS.md`](TEST_RESULTS.md): 24 cases, the
+first eight being the brief's eight test-question types.
+
+| Requirement | Where it is, and what to look at |
+|---|---|
+| Content ingestion | `app/fetch.py` reads only the seven allow-listed URLs, obeys `robots.txt`, identifies itself with a descriptive User-Agent, and spaces requests by `CRAWL_DELAY` (3 s, the value placidway.com publishes). `python -m app.ingest` produces 7 pages / 183 chunks / 69 price rows / 19 FAQ pairs. |
+| Knowledge base | `app/chunk.py` splits on headings with tables kept whole; `app/retrieve.py` fuses BM25 and `mistral-embed` with reciprocal rank fusion and returns 8 passages. `tests/retrieval_eval.py` reports hit@k and MRR for both configurations. |
+| Grounded answers with sources | `app/guard.py` fails an answer that cites a page it was not given or states a figure absent from the evidence, and `app/answer.py` regenerates once before refusing. Every answer carries source cards with the real URL. |
+| Honest "I don't know" | `app/retrieve.py` gates on coverage (`MIN_RETRIEVAL_SCORE`), and the prompt's refusal path ends in the free-quote link. Cases 5, 10, 11, 13 and 20 in the results file are refusals. |
+| Cost questions | The guard rejects any amount without a currency; price rows carry the page's own context ("out-patient program", "starting from"), and the UI prints the figure with a quiet qualifier, as their package page does. |
+| Simple chat UI | `frontend/` — a Next.js static export served at `/`. Type a question, watch it stream, click a citation to reach its source. |
+| Refresh | `POST /api/admin/refresh` for a manual run, plus `placidway-refresh.timer` daily on the host. Refusals are logged to `unanswered` so content gaps are visible. |
+| Live deployment | <https://placidway.patricksamuel.ninja>, container restart policy `unless-stopped`, tunnel and refresh timer both `enabled`. |
+| Answers in the user's language | `app/intents.py` detects Spanish and Arabic, searches in English, and answers in the question's language. Cases 9 and 12. |
+| Follow-up questions | Chat history is replayed from `sessions`/`messages`; cases 4 and 19 depend on it. |
+| Short disclaimer when relevant | `show_disclaimer` is set per answer rather than printed on every one; the prompt explicitly forbids repeating it. |
+| Lead capture | `POST /api/lead` stores name, email and message in SQLite; the form posts there, and a failure is reported to the reader rather than swallowed. |
+| Logging unanswerable questions | `GET /api/admin/unanswered` (admin token) lists the questions the bot could not ground, with intent and confidence. |
+
+`docs/CODE_WALK.md` is the review route: ten sections in the order a reviewer
+would ask about them, each with the question it answers and the failure it is
+designed against.
+
+---
+
 ## Quick start
 
 ```bash

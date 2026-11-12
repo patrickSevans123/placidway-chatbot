@@ -107,6 +107,38 @@ bare number and never a large promotional price.
 - Their own assistant is a named person, **Alice**, presented as a circular
   avatar in a coral pill: "Need help? Chat with Alice".
 
+## The logo
+
+Their header ships one image, and it is the only logo used on the site:
+
+```html
+<img width="140" height="70" fetchpriority="high"
+     alt="Logo Placidway"
+     src="/cdn-cgi/image/quality=85,fit=pad,width=140,format=auto/frontend/images/PlacidWay-logo-opt.png"
+     srcset="...width=140 1x, ...width=280 2x, ...width=420 3x">
+```
+
+What was measured on the file itself:
+
+| Property | Value |
+|---|---|
+| Original | `frontend/images/PlacidWay-logo.png`, 1850x931, 23 KB, 32-bit PNG |
+| Artwork | coral `#e85a4f` on transparency; the only other colour is the white cut-out inside the circular mark |
+| Padding | none — the ink box is 1849x931 of a 1850x931 canvas, flush to every edge |
+| Aspect | 1.987:1 |
+| Their rendering | 140x70 CSS px inside a 70 px header bar |
+
+Their app icon is a different artwork: a red and black painterly square with a
+white dancer and the wordmark, shipped as `/pwa/192x192_1.png`,
+`/pwa/512x512_1.png` and `/pwa/apple-touch-icon2.png` (144). Their
+`theme-color` and manifest background are both `#ffffff`.
+
+The logo is their trademark. It is used here to identify the company whose pages
+the answers come from, which is exactly what a citation means; it is not a claim
+that this project is theirs. The file is self-hosted rather than hotlinked, so
+the page does not depend on their CDN and does not send them a request every
+time a reviewer opens the page.
+
 ## Voice
 
 From their own copy: "Your Way to Hope", "Because every patient deserves a way

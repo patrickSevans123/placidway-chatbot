@@ -11,7 +11,9 @@ than silently passed.
 
 from __future__ import annotations
 
+import json
 import re
+import subprocess
 import sys
 import time
 from dataclasses import dataclass, field
@@ -21,6 +23,34 @@ from app.answer import answer
 
 ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "TEST_RESULTS.md"
+
+
+def _commit() -> str:
+    """The commit the answers were produced by, so the file can be traced back."""
+    try:
+        done = subprocess.run(
+            ["git", "rev-parse", "--short", "HEAD"],
+            capture_output=True,
+            text=True,
+            timeout=5,
+            cwd=ROOT,
+            check=False,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return "unknown"
+    return done.stdout.strip() or "unknown"
+
+
+def _corpus_line() -> str:
+    """Which corpus the answers ran against. A stale corpus is a real explanation."""
+    try:
+        data = json.loads((ROOT / "data" / "corpus.json").read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return "Corpus: unknown."
+    return (
+        f"Corpus: {data.get('page_count', '?')} pages, {data.get('chunk_count', '?')} chunks, "
+        f"{len(data.get('prices', []))} prices, built {data.get('built_at', '?')}."
+    )
 
 
 @dataclass
@@ -364,6 +394,9 @@ def write_report(results: list[dict]) -> None:
         "# Test results",
         "",
         f"Generated {time.strftime('%Y-%m-%d %H:%M UTC', time.gmtime())} by `python -m tests.run_eval`.",
+        "",
+        f"Code {_commit()}. {_corpus_line()} Model "
+        f"`{next((r.get('model') for r in results if r.get('model')), 'unknown')}`.",
         "",
         f"**{passed} of {total} cases passed the automated checks.**",
         "",
