@@ -134,7 +134,10 @@ def analyse(message: str, history: list[dict] | None = None) -> Analysis:
     ]
 
     try:
-        result = chat(messages, temperature=0.0, max_tokens=300)
+        # A reasoning model spends part of this budget before it writes the JSON:
+        # observed 120-220 tokens for one classification. 300 was enough to be
+        # cut off mid-object, so the budget covers the reasoning and the answer.
+        result = chat(messages, temperature=0.0, max_tokens=700)
         data = _parse_json(result.text)
     except (LLMError, ValueError, json.JSONDecodeError) as exc:
         log.warning("intent analysis failed (%s); using rules", exc)

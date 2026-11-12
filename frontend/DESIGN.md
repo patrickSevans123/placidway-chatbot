@@ -160,6 +160,27 @@ schedule, not an essay, and because it is the current default look of generated
 design. The right-hand panel was kept only as a contents column and only before
 the first question: repeating the page count beside every answer was filler.
 
+## Sleek pass
+
+Read off the built page at 1440 and 390. The direction did not change: the same
+dossier, the same tokens, one accent. What changed is how much of each system is
+on screen at once.
+
+| What was wrong | What changed |
+|---|---|
+| Six hairlines of one weight plus a 2px ink rule per screen, so nothing ranked | Exactly two: `--rule` (#e7e7e4) for every divider, `--rule-ink` (#1f1f1f) at 2px for the docket's top rule only. Field edges use `--rule-field` (#b4b4b0), which is not a divider. Rules were deleted where they separated one-line blocks: the docket caption, the starters heading, the contents label, the contents footer, the sources heading, the figure, the answer footer. |
+| The docket's unit floated at an arbitrary height | `--figure-cap: 0.698` is Plex Mono's measured cap height at the figure size. The unit is 12px, weight 400, `--faint`, 7px away, and its baseline is lifted `0.698em` onto the figure's cap line. Measured: the unit's optical top (8.376 + 2.4 + 0.62) lands on the figure's ink top within 0.1px. |
+| The Ask button was a coral wash that read disabled | Solid `--coral-ink` with white (4.77:1), 3px radius, `--coral-deep` on hover. Disabled is the same coral at 60% opacity, not a second colour. The field is white with a `--rule-field` edge that turns `--ink` on focus; the wash and glow are gone. |
+| Boxed thumbs and a boxed copy control competed with the answer | One 12px row: `Copy · Helpful? [Yes] [No]`, no boxes, one hairline separator between copy and the rating, `--muted` at rest and `--ink` on hover. The provenance line keeps its facts in `--faint`. |
+| Six uppercase 11px labels a screen at 0.1em | One style: 10.5px, 0.14em, `--faint`, used only where a label names a block. The refusal lead became a title, because it named no block. |
+| The margin note cut a URL mid-word (`/Alte…`) | The note shows the domain, whole; the full address is in `title`. The package slug is one unbreakable 324px word in a 194px column, so no shortening of it can end on a word boundary. |
+| A one-pixel pipe between the logo and its label | Removed. The label is the page's label style. |
+| Nothing answered the pointer | One 160ms `--ease` tick everywhere: the question row moves its arrow 3px and draws the title underline, buttons darken, links draw their underline in ink, the source row draws its title underline. Under `prefers-reduced-motion` the colours change and nothing slides. |
+
+Rejected in this pass: a gradient (tried for the rating separator, removed), a
+second accent, and rewriting `readableUrl`, which lives outside the files this
+pass covered.
+
 ## Files
 
 `ChatSurface` (state and shell) · `Turn` · `AnswerProse` · `PricePanel` ·

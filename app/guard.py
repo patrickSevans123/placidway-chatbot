@@ -71,9 +71,10 @@ def _to_float(raw: str) -> float | None:
 # "not included" is excluded because it is a normal phrase in a package
 # description ("flights are not included"), not a refusal.
 ABSENCE_RE = re.compile(
-    r"\b(?:not\s+(?:listed|available|mentioned|stated|specified|provided|documented)|"
+    r"\b(?:not\s+(?:listed|available|mentioned|stated|specified|provided|documented|covered)|"
     r"no\s+(?:price|information|details|data|mention)|"
     r"(?:don'?t|do not|doesn'?t|does not)\s+(?:have|mention|say|specify|state|list|provide|cover)|"
+    r"(?:say|says|said|state|states)\s+nothing|nothing\s+(?:about|on|in)\b|"
     r"(?:cannot|can'?t|unable to)\s+find|"
     r"(?:isn'?t|is not|aren'?t|are not)\s+on\s+(?:the|these|our)\s+pages|"
     r"not\s+in\s+(?:the|our)\s+(?:content|knowledge|pages|sources))\b",

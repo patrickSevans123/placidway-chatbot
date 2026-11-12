@@ -4,7 +4,8 @@
    The look is a prepared dossier: white paper, ink rules where a card would
    normally sit, mono for anything that is a record (labels, numbers, dates) and
    sans for anything read as a sentence. Coral is a mark, never a field: the
-   eyebrow tick, a citation glyph, the Ask fill, the edge of a lit note.
+   eyebrow tick, the lit note's edge, and the one filled button (Ask, which is a
+   solid coral-ink fill with white text at 4.77:1).
    ========================================================================== */
 
 /* ---------- Header: a masthead, not an app bar ---------- */
@@ -17,9 +18,22 @@
   top: 0;
   z-index: 30;
   background: var(--surface);
-  border-bottom: 1px solid var(--hair);
+  border-bottom: 1px solid var(--rule);
 }
 
+/* The masthead keeps its rule; content that scrolls under it fades in over the
+   20px below the rule instead of stopping on a cut line. Same treatment as the
+   dock at the other edge, so both ends of the page handle overlap the same way. */
+.top::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 100%;
+  height: 20px;
+  background: linear-gradient(to bottom, var(--surface), rgba(255, 255, 255, 0));
+  pointer-events: none;
+}
 .top-inner {
   display: flex;
   align-items: center;
@@ -34,7 +48,7 @@
 .brand {
   display: inline-flex;
   align-items: center;
-  gap: 14px;
+  gap: 16px;
   min-width: 0;
 }
 
@@ -45,21 +59,18 @@
   flex: none;
 }
 
-.brand-rule {
-  width: 1px;
-  height: 16px;
-  background: var(--hair-strong);
-  flex: none;
-}
-
+/* No rule between the mark and the label. A one-pixel pipe is a divider between
+   two one-line things, and this page has exactly two rules (--rule for every
+   divider, --rule-ink at 2px above the docket). The label is the page's one
+   label style, so it is 10.5px at .14em in --faint like every other label. */
 .brand-sub {
   font-family: var(--mono);
   font-size: var(--t-label);
   font-weight: 500;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
   line-height: 1.4;
-  color: var(--muted);
+  color: var(--faint);
   white-space: nowrap;
 }
 
@@ -79,6 +90,7 @@
   font-weight: 500;
   letter-spacing: 0.05em;
   color: var(--body);
+  transition: color var(--tick) var(--ease);
 }
 
 .top-new:hover {
@@ -99,11 +111,16 @@
   text-decoration-color: var(--hair-strong);
   text-decoration-thickness: 1px;
   text-underline-offset: 4px;
+  /* The underline is drawn in --ink on hover, not only recoloured, so the link
+     answers the pointer as clearly as a button does. */
+  transition:
+    color var(--tick) var(--ease),
+    text-decoration-color var(--tick) var(--ease);
 }
 
 .top-link:hover {
-  color: var(--coral-deep);
-  text-decoration-color: currentColor;
+  color: var(--ink);
+  text-decoration-color: var(--ink);
 }
 
 .arrow {
@@ -155,10 +172,10 @@
   font-family: var(--mono);
   font-size: var(--t-label);
   font-weight: 500;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
   line-height: 1.4;
-  color: var(--muted);
+  color: var(--faint);
   animation: rise 520ms var(--ease) backwards;
 }
 
@@ -202,8 +219,9 @@
 
 /* ---------- The docket: two programmes, two figures ---------- */
 
-/* The only 2px ink rule on the opening. It draws itself in from the left, which
-   is the one gesture this page makes on arrival. */
+/* The one 2px ink rule in the document, and the one gesture the page makes on
+   arrival: it draws itself in from the left. It separates the opening text
+   above from the schedule below, so it earns its weight. */
 .docket {
   position: relative;
   margin-top: 34px;
@@ -218,7 +236,7 @@
   left: 0;
   right: 0;
   height: 2px;
-  background: var(--ink);
+  background: var(--rule-ink);
   transform: scaleX(0);
   transform-origin: left center;
   animation: rule 620ms var(--ease) 200ms forwards;
@@ -228,15 +246,16 @@
   font-family: var(--mono);
   font-size: var(--t-label);
   font-weight: 500;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
   line-height: 1.4;
-  color: var(--muted);
+  color: var(--faint);
 }
 
+/* No rule between the caption and the first row: the caption labels the rows, it
+   is not a separate block, so nothing is being divided there. */
 .docket-list {
-  margin-top: 10px;
-  border-bottom: 1px solid var(--hair);
+  margin-top: 8px;
 }
 
 .docket-row {
@@ -244,20 +263,28 @@
   align-items: baseline;
   justify-content: space-between;
   gap: 16px;
-  padding: 12px 0;
-  border-top: 1px solid var(--hair);
+  padding: 14px 0;
+}
+
+.docket-row + .docket-row {
+  border-top: 1px solid var(--rule);
 }
 
 .docket-term {
   font-size: var(--t-body);
+  font-weight: 500;
   line-height: 1.4;
-  color: var(--body);
+  color: var(--ink);
 }
 
+/* The unit's baseline is stood on the figure's cap line. With a flex baseline
+   group the unit's baseline would sit on the figure's baseline, 32px too low and
+   reading as a subscript; `--figure-cap` is the measured cap height of the
+   number itself, so its top ends exactly where the number's top does. */
 .docket-value {
   display: flex;
   align-items: baseline;
-  gap: 10px;
+  gap: 7px;
   min-width: 0;
 }
 
@@ -271,12 +298,14 @@
 }
 
 .docket-cur {
+  position: relative;
+  bottom: calc(var(--figure-cap) * 1em);
   font-family: var(--mono);
-  font-size: var(--t-label);
-  font-weight: 500;
-  letter-spacing: 0.12em;
+  font-size: 12px;
+  font-weight: 400;
   line-height: 1;
-  color: var(--muted);
+  letter-spacing: 0.06em;
+  color: var(--faint);
 }
 
 .docket-note {
@@ -289,40 +318,44 @@
 
 /* ---------- Three questions, set as rows ---------- */
 
+/* No rule between the docket's note and this list: the rule would separate a
+   paragraph from a heading one line below it. Space does that job here; the
+   first row's own hairline is the top edge of the list. */
 .starters {
-  margin-top: 40px;
+  margin-top: 44px;
   animation: rise 520ms var(--ease) 280ms backwards;
 }
 
 .starters-head {
-  padding-top: 12px;
-  border-top: 1px solid var(--hair-strong);
   font-family: var(--mono);
   font-size: var(--t-label);
   font-weight: 500;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
   line-height: 1.4;
-  color: var(--muted);
+  color: var(--faint);
 }
 
 .prompt-list {
   display: grid;
+  margin-top: 10px;
 }
 
-/* A row, not a card: a full-width hit area, a numbered margin, one hairline. */
+/* A row, not a card: a full-width hit area, a numbered margin, one hairline
+   under it, which turns ink while the pointer is on the row. */
 .prompt {
   display: grid;
-  grid-template-columns: 30px minmax(0, 1fr) 16px;
-  align-items: start;
+  grid-template-columns: 26px minmax(0, 1fr) 16px;
+  align-items: baseline;
   gap: 0 12px;
   width: 100%;
-  padding: 13px 0;
-  border-top: 1px solid var(--hair);
+  padding: 14px 0;
+  border-bottom: 1px solid var(--rule);
+  transition: border-color var(--tick) var(--ease);
 }
 
-.prompt-list li:last-child .prompt {
-  border-bottom: 1px solid var(--hair);
+.prompt:hover {
+  border-bottom-color: var(--ink);
 }
 
 .prompt-num {
@@ -339,13 +372,19 @@
   min-width: 0;
 }
 
+/* The title's underline is drawn from nothing to currentColor in 160ms: no
+   layout change, and the one thing on the row that says "this opens". */
 .prompt-q {
   font-size: 15px;
   font-weight: 500;
   line-height: 1.45;
   color: var(--ink);
   overflow-wrap: anywhere;
-  transition: color 140ms ease;
+  text-decoration: underline;
+  text-decoration-color: transparent;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 4px;
+  transition: text-decoration-color var(--tick) var(--ease);
 }
 
 .prompt-note {
@@ -358,24 +397,34 @@
 .prompt-arrow {
   width: 14px;
   height: 14px;
-  margin-top: 4px;
-  color: var(--hair-strong);
-  transition: color 140ms ease, transform 160ms var(--ease);
+  align-self: start;
+  color: var(--faint);
+  transition:
+    color var(--tick) var(--ease),
+    transform var(--tick) var(--ease);
 }
 
 .prompt:hover .prompt-q,
 .prompt:focus-visible .prompt-q {
-  color: var(--coral-deep);
+  text-decoration-color: var(--ink);
+}
+
+.prompt:hover .prompt-arrow,
+.prompt:hover .prompt-num,
+.prompt:focus-visible .prompt-arrow,
+.prompt:focus-visible .prompt-num {
+  color: var(--ink);
 }
 
 .prompt:hover .prompt-arrow,
 .prompt:focus-visible .prompt-arrow {
-  color: var(--coral-ink);
-  transform: translateX(2px);
+  transform: translateX(3px);
 }
 
 /* ---------- The seven pages: the one tinted surface ---------- */
 
+/* The one tonal block on the page, so it has no rule around its top: the tint
+   is its edge. Inside it, hairlines separate real rows only. */
 .contents {
   padding: 20px 20px 18px;
   background: var(--wash);
@@ -383,19 +432,18 @@
 }
 
 .contents-label {
-  padding-bottom: 10px;
-  border-bottom: 1px solid var(--hair-wash);
   font-family: var(--mono);
   font-size: var(--t-label);
   font-weight: 500;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
   line-height: 1.4;
-  color: var(--muted);
+  color: var(--faint);
 }
 
 .contents-list {
   display: grid;
+  margin-top: 6px;
 }
 
 .contents-row {
@@ -406,7 +454,7 @@
 }
 
 .contents-row + .contents-row {
-  border-top: 1px solid var(--hair-wash);
+  border-top: 1px solid var(--rule);
 }
 
 .contents-num {
@@ -438,8 +486,6 @@
 
 .contents-foot {
   margin-top: 12px;
-  padding-top: 10px;
-  border-top: 1px solid var(--hair-wash);
   font-size: 12px;
   line-height: 1.5;
   color: var(--faint);
@@ -452,13 +498,15 @@
   gap: 52px;
 }
 
-/* Each answer opens with an ink rule: the sheet's section break. */
+/* Each answer opens with the sheet's only hairline-weight section break. It is
+   --rule, not ink: the docket's 2px rule is the document's one heavy line, and
+   the question that follows is the section's own heading. */
 .turn {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   gap: 24px;
-  padding-top: 18px;
-  border-top: 2px solid var(--ink);
+  padding-top: 20px;
+  border-top: 1px solid var(--rule);
 }
 
 .turn-body {
@@ -656,28 +704,25 @@
 /* ---------- The figure: the one display object ---------- */
 
 /* Set like a printed schedule line: a mono caption, the number at display size
-   in tabular figures, the qualifier under it at reading size, one hairline to
-   close. No box, no tint: the size does the work. */
-.figure {
-  padding-bottom: 14px;
-  border-bottom: 1px solid var(--hair);
-}
+   in tabular figures, the qualifier and the page it came from under it. No box,
+   no tint, and no rule of its own: the size does the work, and the document's
+   one 2px rule stands above the docket. */
 
 .figure-label {
   font-family: var(--mono);
   font-size: var(--t-label);
   font-weight: 500;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
   line-height: 1.4;
-  color: var(--muted);
+  color: var(--faint);
 }
 
 .figure-line {
   display: flex;
   align-items: baseline;
   flex-wrap: wrap;
-  gap: 0 10px;
+  gap: 0 7px;
   margin-top: 6px;
 }
 
@@ -690,13 +735,17 @@
   color: var(--ink);
 }
 
+/* The same measured cap-line placement as the docket's unit: the figure sits in
+   an answer the same way it sits on the opening, so the two cannot drift. */
 .figure-cur {
+  position: relative;
+  bottom: calc(var(--figure-cap) * 1em);
   font-family: var(--mono);
-  font-size: var(--t-label);
-  font-weight: 500;
-  letter-spacing: 0.12em;
+  font-size: 12px;
+  font-weight: 400;
+  letter-spacing: 0.06em;
   line-height: 1;
-  color: var(--muted);
+  color: var(--faint);
 }
 
 .figure-qualifier {
@@ -718,10 +767,10 @@
   color: var(--faint);
 }
 
-/* A control, not a label: the mono labels on this page are uppercase and set
-   between rules, so this one is sentence case with no rule under it. Grey, not
-   ink, because it must not compete with the figure above; the chevron is the
-   only coral. */
+/* A control, not a label: the mono labels on this page are uppercase and
+   settled above the block they name, so this one is sentence case and carries no
+   rule. Grey, not ink, because it must not compete with the figure above; the
+   chevron is the only coral. */
 .figure-toggle {
   display: inline-flex;
   align-items: center;
@@ -753,111 +802,157 @@
   transform: rotate(180deg);
 }
 
-/* ---------- Answer footer: copy, rating, provenance ---------- */
+/* ---------- Answer footer: one text row, then the quiet facts ---------- */
 
+/* The apparatus is smaller than the answer and says so in size, not in boxes.
+   One 12px text row with hairline separators: three things to do, and nothing
+   that looks like a second set of buttons competing with the prose above. A
+   hairline separates it from the answer, which is the only reason it has one. */
 .answer-foot {
   display: grid;
-  gap: 10px;
+  gap: 8px;
+  padding-top: 12px;
+  border-top: 1px solid var(--rule);
 }
 
 .answer-tools {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 4px 20px;
-  min-height: 44px;
+  gap: 0 14px;
 }
 
+/* A 44px hit box drawn as a line of text: no border, no fill, --muted at rest,
+   --ink under the pointer or while pressed. */
 .tool {
   display: inline-flex;
   align-items: center;
-  gap: 7px;
+  gap: 6px;
   min-height: 44px;
   font-family: var(--mono);
   font-size: 12px;
-  font-weight: 500;
-  letter-spacing: 0.04em;
+  font-weight: 400;
+  letter-spacing: 0.02em;
   color: var(--muted);
+  transition: color var(--tick) var(--ease);
 }
 
 .tool:hover {
   color: var(--ink);
 }
 
+/* Between two actions, never before the first: a separator with nothing on its
+   left is a rule drawn for its own sake. The rate group is inline, so the
+   separator is a real 1px box, inset by 16px from the row's top. */
+.tool + .rate-group::before {
+  content: "";
+  display: inline-block;
+  width: 1px;
+  height: 11px;
+  margin-right: 14px;
+  background: var(--rule);
+}
+
 .copy-icon {
-  width: 15px;
-  height: 15px;
+  width: 13px;
+  height: 13px;
+  flex: none;
 }
 
 .rate-group {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 0 2px;
 }
 
 .rate-question {
-  margin-right: 2px;
+  margin-right: 4px;
   font-family: var(--mono);
   font-size: 12px;
   line-height: 1;
   color: var(--muted);
 }
 
+/* The thumbs keep the row's size: a 12px label, a 14px icon, no box. The
+   pressed one is the only coral in this row, and it is text, not a fill. */
 .rate {
-  display: grid;
-  place-items: center;
-  width: 44px;
-  height: 44px;
-  border: 1px solid var(--hair);
-  border-radius: var(--r-control);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  min-width: 20px;
+  min-height: 44px;
+  padding: 0 4px;
+  font-family: var(--mono);
+  font-size: 12px;
+  letter-spacing: 0.02em;
   color: var(--muted);
-  transition: border-color 120ms ease, color 120ms ease, background-color 120ms ease;
+  transition:
+    color var(--tick) var(--ease),
+    opacity var(--tick) var(--ease);
 }
 
 .rate:hover:not(:disabled) {
-  border-color: var(--hair-strong);
   color: var(--ink);
 }
 
 .rate[aria-pressed="true"] {
-  border-color: var(--coral-line);
-  background: var(--coral-wash);
   color: var(--coral-deep);
 }
 
 .rate:disabled:not([aria-pressed="true"]) {
-  opacity: 0.4;
+  opacity: 0.45;
   cursor: default;
 }
 
 .thumb {
-  width: 17px;
-  height: 17px;
+  width: 14px;
+  height: 14px;
+  flex: none;
+}
+
+/* One separator, between the question and the pair of answers: [Helpful?] | [Yes]
+   [No]. A line inside the pair read as a cut between two halves of one answer.
+   `align-self: center` centres it on the 44px row whatever the buttons do; no
+   baseline is involved, so it cannot hang above the words. */
+.rate-group::before {
+  content: "";
+  display: inline-block;
+  align-self: center;
+  width: 1px;
+  height: 11px;
+  margin-right: 12px;
+  background: var(--rule);
 }
 
 .rate-note {
   font-family: var(--mono);
   font-size: 12px;
   line-height: 1.4;
-  color: var(--muted);
+  color: var(--faint);
 }
 
+/* From one page · Answered in 3.4 s · Prices checked 11 Nov 2026: the facts that
+   make the answer checkable, one step below the answer, in --faint so the line
+   is present without pulling the eye from the prose. The dots are drawn by CSS
+   as a trailing mark on the item before them, so a wrapped line can never begin
+   on a stranded separator. */
 .provenance {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 4px 10px;
+  gap: 2px 0;
+  min-width: 0;
   font-family: var(--mono);
   font-size: 12px;
   line-height: 1.6;
-  color: var(--muted);
+  color: var(--faint);
 }
 
-.provenance-sep {
-  width: 3px;
-  height: 3px;
-  border-radius: 50%;
-  background: var(--hair-strong);
+.provenance-item:not(:last-child)::after {
+  content: "·";
+  margin: 0 8px;
+  color: var(--hair-strong);
 }
 
 /* The quiet line that says the text was checked, in the place their
@@ -880,6 +975,16 @@
   transform: translateY(-1px);
 }
 
+/* The footer's own rule is drawn only on the prose's measure, not out to the
+   margin column: it closes the answer, and the margin beside it is a separate
+   block. */
+@media (min-width: 880px) {
+  .answer-foot {
+    max-width: var(--read);
+    margin-right: auto;
+  }
+}
+
 /* ---------- Margin notes: the apparatus ---------- */
 
 .sources {
@@ -888,19 +993,18 @@
 }
 
 .sources-head {
-  padding-bottom: 8px;
-  border-bottom: 1px solid var(--hair-strong);
   font-family: var(--mono);
   font-size: var(--t-label);
   font-weight: 500;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
   line-height: 1.4;
-  color: var(--muted);
+  color: var(--faint);
 }
 
 .source-list {
   display: grid;
+  margin-top: 8px;
 }
 
 /* Every level of this chain is a grid item, and a grid item defaults to
@@ -913,7 +1017,7 @@
 }
 
 .source + .source {
-  border-top: 1px solid var(--hair);
+  border-top: 1px solid var(--rule);
 }
 
 /* The negative horizontal margin makes the tint 6px wider than the text, so the
@@ -925,15 +1029,11 @@
   gap: 8px;
   padding: 11px 6px;
   margin: 0 -6px;
-  transition: background-color 200ms ease;
+  transition: background-color var(--tick) var(--ease);
 }
 
 .source-link:hover {
   background: var(--wash-2);
-}
-
-.source-link:hover .source-title {
-  color: var(--coral-deep);
 }
 
 .source-num {
@@ -961,7 +1061,15 @@
   text-decoration-color: var(--hair-strong);
   text-decoration-thickness: 1px;
   text-underline-offset: 3px;
-  transition: color 140ms ease;
+  transition:
+    color var(--tick) var(--ease),
+    text-decoration-color var(--tick) var(--ease);
+}
+
+/* The title's underline is drawn to --ink in 160ms: no layout change, and the
+   one thing on the row that says "this opens". */
+.source-link:hover .source-title {
+  text-decoration-color: var(--ink);
 }
 
 .inline-arrow {
@@ -993,16 +1101,18 @@
   white-space: nowrap;
 }
 
+/* The domain is a whole word and never a cut one. A path cannot be shown here:
+   this package's slug is a single 324px word in a 194px column, so any shortening
+   ends mid-word ("/Alte…"). The page's name and its full address live in the title
+   row above; this is the address bar, not the address. */
 .source-url {
   font-family: var(--mono);
   font-size: 10px;
-  line-height: 1.6;
+  line-height: 1.55;
   color: var(--faint);
   min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
   max-width: 100%;
+  overflow-wrap: anywhere;
 }
 
 /* Clicking a [n] tints the note and draws a coral edge: a status mark, not
@@ -1038,7 +1148,7 @@
 
 .notice {
   padding-top: 14px;
-  border-top: 1px solid var(--hair-strong);
+  border-top: 1px solid var(--rule);
 }
 
 .notice-title {
@@ -1073,19 +1183,19 @@
 
 /* ---------- Refusal: information, not an error ---------- */
 
-/* The turn already opens with a 2px ink rule, so the refusal carries no second
-   one: the mono lead is what marks it as a different kind of answer. */
+/* The turn already opens with the document's hairline, so the refusal carries no
+   second one. Its lead was a seventh uppercase label for a block it does not
+   name; it is now a title in the same voice as the notices' titles, which is
+   what it is. */
 .refusal {
   padding-top: 0;
 }
 
 .refusal-lead {
-  font-family: var(--mono);
-  font-size: var(--t-label);
-  font-weight: 500;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  line-height: 1.4;
+  font-size: var(--t-title);
+  font-weight: 600;
+  line-height: 1.35;
+  letter-spacing: -0.01em;
   color: var(--ink);
 }
 
@@ -1109,6 +1219,8 @@
 
 /* ---------- Buttons ---------- */
 
+/* One shape for every button on the page: 44px tall, 3px radius. Where the
+   filled button is a link (a quote refusal) this class supplies the shape. */
 .button {
   display: inline-flex;
   align-items: center;
@@ -1120,7 +1232,10 @@
   font-size: 15px;
   font-weight: 600;
   line-height: 1.2;
-  transition: background-color 140ms ease, color 140ms ease, border-color 140ms ease;
+  transition:
+    background-color var(--tick) var(--ease),
+    color var(--tick) var(--ease),
+    border-color var(--tick) var(--ease);
 }
 
 /* Filled buttons use their --light-red, not the brighter #e85a4f: white on the
@@ -1135,13 +1250,13 @@
 }
 
 .button-quiet {
-  border: 1px solid var(--hair-strong);
+  border: 1px solid var(--rule-field);
   color: var(--body);
   background: var(--surface);
 }
 
 .button-quiet:hover {
-  border-color: var(--faint);
+  border-color: var(--ink);
   color: var(--ink);
 }
 
@@ -1149,10 +1264,12 @@
   cursor: default;
 }
 
+/* Disabled is one step back, not a second colour: the same coral, held at 60%.
+   A pale coral fill with a coral border read as broken, which is the worst thing
+   a primary action can look like while someone is still typing. */
 .button-solid:disabled {
-  background: var(--coral-wash);
-  color: var(--coral-deep);
-  box-shadow: inset 0 0 0 1px var(--coral-line);
+  background: var(--coral-ink);
+  opacity: 0.6;
 }
 
 /* ---------- Quote form ---------- */
@@ -1166,17 +1283,22 @@
   font-weight: 600;
   color: var(--coral-ink);
   text-decoration: underline;
+  text-decoration-color: var(--coral-line);
   text-decoration-thickness: 1px;
   text-underline-offset: 4px;
+  transition:
+    color var(--tick) var(--ease),
+    text-decoration-color var(--tick) var(--ease);
 }
 
 .quote-open:hover {
   color: var(--coral-deep);
+  text-decoration-color: currentColor;
 }
 
 .quote-sent {
   padding-top: 14px;
-  border-top: 1px solid var(--hair-strong);
+  border-top: 1px solid var(--rule);
   font-size: 15px;
   line-height: 1.6;
   color: var(--body);
@@ -1185,7 +1307,7 @@
 .quote {
   padding: 16px 18px 18px;
   background: var(--wash-2);
-  border-top: 2px solid var(--ink);
+  border-top: 1px solid var(--rule);
 }
 
 .quote-lead {
@@ -1237,19 +1359,27 @@
   min-height: 44px;
   padding: 10px 12px;
   background: var(--surface);
-  border: 1px solid var(--hair-strong);
+  border: 1px solid var(--rule-field);
   border-radius: var(--r-control);
   font-size: 16px; /* 16px stops iOS zooming the page on focus */
   line-height: 1.4;
   color: var(--body);
   resize: vertical;
+  transition: border-color var(--tick) var(--ease);
+}
+
+/* A field's edge answers focus by turning ink, with no glow and no second
+   colour: the ring is for the keyboard, this is for the field. */
+.quote-field input:focus,
+.quote-field textarea:focus {
+  border-color: var(--ink);
+  outline: none;
 }
 
 .quote-field input:focus-visible,
 .quote-field textarea:focus-visible {
   outline: 2px solid var(--coral-ink);
-  outline-offset: 0;
-  border-color: var(--coral-ink);
+  outline-offset: 1px;
 }
 
 .quote-field input[aria-invalid="true"] {
@@ -1292,13 +1422,21 @@
 
 /* ---------- Trust line, where their accreditations row sits ---------- */
 
+/* The hairline above it separates the answers from the line that accounts for
+   them, so it stays. The status line below carries no rule: it is a footnote to
+   this one, not another band. */
 .trust {
   margin-top: 48px;
   padding-top: 16px;
-  border-top: 1px solid var(--hair);
+  border-top: 1px solid var(--rule);
 }
 
+/* Two clauses, separated by a dot that trails the clause before it, so a wrap
+   never starts on a stranded separator. */
 .trust-line {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 8px;
   font-family: var(--mono);
   font-size: 12px;
   line-height: 1.6;
@@ -1306,8 +1444,18 @@
   color: var(--muted);
 }
 
+.trust-line > span:not(:last-child)::after {
+  content: "·";
+  margin-left: 8px;
+  color: var(--hair-strong);
+}
+
 /* ---------- Composer: a field fixed to the bottom ---------- */
 
+/* The dock has no rule of its own. Text that scrolls under it dissolves over
+   36px instead of being sliced on a hard line, which is what made the bottom
+   of the opening look cut off. The mask is white paper fading out: the page
+   already has that ground, so this is an edge treatment, not a shadow. */
 .composer-dock {
   position: fixed;
   left: 0;
@@ -1315,8 +1463,18 @@
   bottom: 0;
   z-index: 40;
   background: var(--surface);
-  border-top: 1px solid var(--hair);
   padding: 10px var(--gutter) max(10px, env(safe-area-inset-bottom));
+}
+
+.composer-dock::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 100%;
+  height: 36px;
+  background: linear-gradient(to bottom, rgba(255, 255, 255, 0), var(--surface));
+  pointer-events: none;
 }
 
 .composer,
@@ -1325,20 +1483,22 @@
   margin: 0 auto;
 }
 
+/* A flat white field with a hairline that turns ink on focus. No wash, no glow:
+   the edge is the whole states system, and it is the same edge as every other
+   field on the page. */
 .composer {
   display: flex;
   align-items: flex-end;
   gap: 8px;
   padding: 5px 5px 5px 14px;
   background: var(--surface);
-  border: 1px solid var(--hair-strong);
+  border: 1px solid var(--rule-field);
   border-radius: var(--r-control);
-  transition: border-color 140ms ease, box-shadow 140ms ease;
+  transition: border-color var(--tick) var(--ease);
 }
 
 .composer:focus-within {
-  border-color: var(--coral-ink);
-  box-shadow: 0 0 0 3px var(--coral-wash);
+  border-color: var(--ink);
 }
 
 .composer textarea {
@@ -1367,8 +1527,7 @@
 }
 
 /* Their hero CTA: coral fill, white label. The fill is their --light-red for the
-   same reason as .button-solid: 4.77:1 with white, where #e85a4f is 3.05:1. */
-.composer-button {
+   same reason as .button-solid: 4.77:1 with white, where #e85a4f is 3.05:1. */.composer-button {
   flex: none;
   display: inline-flex;
   align-items: center;
@@ -1382,7 +1541,7 @@
   font-size: 15px;
   font-weight: 600;
   line-height: 1;
-  transition: background-color 140ms ease;
+  transition: background-color var(--tick) var(--ease);
 }
 
 .composer-button:hover:not(:disabled) {
@@ -1392,36 +1551,35 @@
 .composer-arrow {
   width: 15px;
   height: 15px;
-  transition: transform 160ms var(--ease);
+  transition: transform var(--tick) var(--ease);
 }
 
 .composer-button:hover:not(:disabled) .composer-arrow {
   transform: translateX(2px);
 }
 
-/* Disabled keeps the brand colour. A grey slab made the only primary action read
-   as dead; a washed coral with deep-coral text still reads as "not yet" while the
-   one accent stays on screen. */
+/* Before anyone types, the action is still the action: solid coral, held at 60%
+   rather than turned into a pale outline. A pale coral wash with a coral border
+   read as disabled. */
 .composer-button:disabled {
-  background: var(--coral-wash);
-  color: var(--coral-deep);
-  box-shadow: inset 0 0 0 1px var(--coral-line);
+  opacity: 0.6;
   cursor: not-allowed;
 }
 
 .composer-button:disabled:hover {
-  background: var(--coral-wash);
+  background: var(--coral-ink);
 }
 
 .composer-stop {
   background: var(--surface);
   color: var(--ink);
-  border: 1px solid var(--hair-strong);
+  border: 1px solid var(--rule-field);
   font-size: 14px;
 }
 
 .composer-stop:hover:not(:disabled) {
   background: var(--wash-2);
+  border-color: var(--ink);
 }
 
 .stop-icon {
@@ -1440,7 +1598,7 @@
 kbd {
   display: inline-block;
   padding: 0 4px;
-  border: 1px solid var(--hair);
+  border: 1px solid var(--rule);
   border-radius: 2px;
   background: var(--wash);
   font-family: var(--mono);
@@ -1485,7 +1643,6 @@ kbd {
    bar. The logo steps down to 104x52, the same 2:1 box, so neither action is
    pushed off a 380px screen. Both header actions are mono and narrower there. */
 @media (max-width: 600px) {
-  .brand-rule,
   .brand-sub {
     display: none;
   }
@@ -1564,7 +1721,8 @@ kbd {
   }
 }
 
-/* Every animation is off under reduced motion. The citation still lights, it
+/* Every animation is off under reduced motion, and every hover still answers:
+   it changes colour, but nothing slides or lifts. The citation still lights, it
    just does not fade, and everything that rises is already in place. */
 @media (prefers-reduced-motion: reduce) {
   *,
@@ -1579,6 +1737,17 @@ kbd {
   .source.is-lit {
     animation: none;
     background: var(--coral-wash);
+  }
+
+  .prompt:hover .prompt-arrow,
+  .prompt:focus-visible .prompt-arrow,
+  .composer-button:hover:not(:disabled) .composer-arrow {
+    transform: none;
+  }
+
+  .docket-cur,
+  .figure-cur {
+    bottom: calc(var(--figure-cap) * 1em);
   }
 }
 

@@ -42,21 +42,50 @@ def _env_bool(name: str, default: bool) -> bool:
 @dataclass(frozen=True)
 class Settings:
     # --- LLM -------------------------------------------------------------
-    llm_base_url: str = field(default_factory=lambda: _env("LLM_BASE_URL", "https://api.mistral.ai/v1"))
+    # OpenCode Go: an OpenAI-compatible gateway with a monthly allowance, which
+    # is why it replaced the per-token Mistral endpoint. Any compatible server
+    # still works by setting LLM_BASE_URL.
+    llm_base_url: str = field(
+        default_factory=lambda: _env("LLM_BASE_URL", "https://opencode.ai/inference/go/openai/v1")
+    )
     llm_api_key: str = field(default_factory=lambda: _env("LLM_API_KEY", ""))
-    llm_model: str = field(default_factory=lambda: _env("LLM_MODEL", "deepseek-v4-1-flash-1017"))
+    llm_model: str = field(default_factory=lambda: _env("LLM_MODEL", "deepseek-v4.1-flash"))
     # Tried in order when the primary model errors out.
     llm_fallbacks: tuple[str, ...] = field(
         default_factory=lambda: tuple(
             m.strip()
-            for m in _env("LLM_FALLBACKS", "mistral-large-latest,mistral-small-latest").split(",")
+            for m in _env("LLM_FALLBACKS", "glm-5.3-flash,minimax-m3.1-flash").split(",")
             if m.strip()
         )
     )
     llm_timeout: float = field(default_factory=lambda: _env_float("LLM_TIMEOUT", 60.0))
     llm_temperature: float = field(default_factory=lambda: _env_float("LLM_TEMPERATURE", 0.0))
+    # A reasoning model can spend a small `max_tokens` budget before writing
+    # anything and return an empty completion. These prompts ask for one JSON
+    # object or two sentences, so the reasoning is off unless a deployment wants
+    # it. Empty means the field is not sent at all, for providers that reject it.
+    llm_reasoning_effort: str = field(
+        default_factory=lambda: _env("LLM_REASONING_EFFORT", "none").strip().lower()
+    )
+    # Gateways ask to be told who is calling, rather than seeing a bare SDK
+    # user agent, and to receive a stable conversation id so requests can be
+    # routed and cached together.
+    llm_user_agent: str = field(
+        default_factory=lambda: _env("LLM_USER_AGENT", "PlacidWayAssessmentBot/1.0")
+    )
+    llm_session_id: str = field(default_factory=lambda: _env("LLM_SESSION_ID", "placidway-guide"))
+
 
     # --- Retrieval -------------------------------------------------------
+    # The chat gateway serves chat models only, so embeddings have their own
+    # endpoint and key. Both default to the chat ones for a single-provider
+    # deployment.
+    embedding_base_url: str = field(
+        default_factory=lambda: _env("EMBEDDING_BASE_URL", _env("LLM_BASE_URL", "https://opencode.ai/inference/go/openai/v1"))
+    )
+    embedding_api_key: str = field(
+        default_factory=lambda: _env("EMBEDDING_API_KEY", _env("LLM_API_KEY", ""))
+    )
     top_k: int = field(default_factory=lambda: _env_int("TOP_K", 8))
     candidate_k: int = field(default_factory=lambda: _env_int("CANDIDATE_K", 24))
     # On, and the two evaluations disagree about whether it should be. The

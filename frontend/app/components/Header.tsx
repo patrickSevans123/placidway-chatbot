@@ -20,7 +20,6 @@ export function Header({ onNew, showNew }: { onNew: () => void; showNew: boolean
             fetchPriority="high"
             decoding="async"
           />
-          <span className="brand-rule" aria-hidden="true" />
           <span className="brand-sub">Treatment guide</span>
         </a>
 

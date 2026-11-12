@@ -81,6 +81,21 @@ def _parse_body(body: str) -> str:
     return (content or "").strip()
 
 
+def _headers() -> dict[str, str]:
+    """The headers every model call sends.
+
+    One gateway asks each client to identify itself and to send a stable
+    conversation id, so the same call works unchanged against a plain
+    OpenAI-compatible server, which ignores both.
+    """
+    return {
+        "Authorization": f"Bearer {settings.llm_api_key}",
+        "Content-Type": "application/json",
+        "User-Agent": settings.llm_user_agent,
+        "x-opencode-session": settings.llm_session_id,
+    }
+
+
 def chat(
     messages: list[dict],
     *,
@@ -108,15 +123,14 @@ def chat(
             "max_tokens": max_tokens,
             "stream": False,
         }
+        if settings.llm_reasoning_effort:
+            payload["reasoning_effort"] = settings.llm_reasoning_effort
         started = time.monotonic()
         try:
             with httpx.Client(timeout=timeout or settings.llm_timeout) as client:
                 response = client.post(
                     f"{settings.llm_base_url.rstrip('/')}/chat/completions",
-                    headers={
-                        "Authorization": f"Bearer {settings.llm_api_key}",
-                        "Content-Type": "application/json",
-                    },
+                    headers=_headers(),
                     json=payload,
                 )
             if response.status_code >= 400:
@@ -200,6 +214,8 @@ def chat_stream(
         "max_tokens": max_tokens,
         "stream": True,
     }
+    if settings.llm_reasoning_effort:
+        payload["reasoning_effort"] = settings.llm_reasoning_effort
 
     emitted = False
     owns_client = client is None
@@ -208,10 +224,7 @@ def chat_stream(
         with http.stream(
             "POST",
             f"{settings.llm_base_url.rstrip('/')}/chat/completions",
-            headers={
-                "Authorization": f"Bearer {settings.llm_api_key}",
-                "Content-Type": "application/json",
-            },
+            headers=_headers(),
             json=payload,
         ) as response:
             if response.status_code >= 400:

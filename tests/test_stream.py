@@ -132,6 +132,9 @@ class _StubSettings:
     llm_temperature = 0.0
     llm_timeout = 5.0
     llm_fallbacks: tuple[str, ...] = ()
+    llm_user_agent = "PlacidWayAssessmentBot/1.0"
+    llm_session_id = "test-session"
+    llm_reasoning_effort = "none"
 
 
 def test_chat_stream_reads_a_server_sent_event_body(monkeypatch):

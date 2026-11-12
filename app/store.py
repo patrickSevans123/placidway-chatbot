@@ -258,17 +258,23 @@ class Store:
         log.info("built embeddings %s via %s", vectors.shape, backend)
 
     def _embed_api(self, texts: list[str]) -> np.ndarray | None:
-        """Embed through the OpenAI-compatible /embeddings endpoint."""
-        if not settings.llm_api_key:
-            log.warning("no LLM_API_KEY; cannot build API embeddings")
+        """Embed through an OpenAI-compatible /embeddings endpoint.
+
+        Kept separate from the chat endpoint: the chat gateway in this
+        deployment (OpenCode Go) serves chat models only, so the embedding
+        model stays on the provider that was used to build the cached vectors.
+        """
+        if not settings.embedding_api_key:
+            log.warning("no embedding API key; cannot build API embeddings")
             return None
 
         import httpx
 
-        url = f"{settings.llm_base_url.rstrip('/')}/embeddings"
+        url = f"{settings.embedding_base_url.rstrip('/')}/embeddings"
         headers = {
-            "Authorization": f"Bearer {settings.llm_api_key}",
+            "Authorization": f"Bearer {settings.embedding_api_key}",
             "Content-Type": "application/json",
+            "User-Agent": settings.llm_user_agent,
         }
         out: list[list[float]] = []
         batch = max(1, settings.embedding_batch)

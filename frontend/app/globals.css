@@ -67,9 +67,19 @@
   --faint: #6a6a6a; /* 5.6:1: their #777 darkened past AA, the lightest grey
                        allowed to carry text. #777 itself is 4.48:1. */
 
-  --hair: #e9ebeb; /* their --light-gray: every hairline in the document */
-  --hair-strong: #c4c4c4; /* their --gray: input edges, quiet buttons */
-  --hair-wash: #e2e2e2; /* a hairline that has to be seen on --wash */
+  /* Two rules, and only two. Every divider is --rule. The single heavier line
+     is the 2px --rule-ink above the docket, which the components set by name.
+     --rule-field is the one exception to the colour rule and not a divider: a
+     field's own edge has to be seen before it is touched (visible: 1.48:1). */
+  --rule: #e7e7e4; /* every divider in the document */
+  --rule-ink: #1f1f1f; /* the docket's top rule, at 2px, and the ink a field's
+                          edge takes on focus */
+  --rule-field: #b4b4b0; /* a field's edge at rest */
+
+  --hair: #e9ebeb; /* older token, kept so nothing that still names it goes
+                       missing; new work uses --rule */
+  --hair-strong: #c4c4c4;
+  --hair-wash: #e2e2e2;
 
   --r-control: 3px; /* fields and buttons: a document has near-square corners */
   --r-card: 3px;
@@ -93,9 +103,14 @@
   --t-lead: 17px;
   --t-body: 16px;
   --t-small: 13px;
-  --t-label: 11px;
-
+  --t-label: 10.5px; /* the only label size; tracking .14em lives in .label */
+  /* Plex Mono at 46px measures 0.698em from baseline to cap line, so the gap
+     from the digit baseline up to its cap line is 32.1px. That is the size of
+     the offset that stands USD's own baseline on the figure's cap line, and
+     takes the guesswork out of "smaller type beside a big number". */
+  --figure-cap: 0.698;
   --ease: cubic-bezier(0.16, 1, 0.3, 1);
+  --tick: 160ms;
 }
 
 *,
@@ -172,6 +187,16 @@ svg {
 
 .tabular {
   font-variant-numeric: tabular-nums lining-nums;
+}
+
+/* Every transition on this page is 160ms on --ease, so a pointer gets the same
+   answer from a row, a button, a link and a field. */
+.tick {
+  transition:
+    color var(--tick) var(--ease),
+    background-color var(--tick) var(--ease),
+    border-color var(--tick) var(--ease),
+    text-decoration-color var(--tick) var(--ease);
 }
 
 .sr-only {

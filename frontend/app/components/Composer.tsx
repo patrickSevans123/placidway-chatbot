@@ -72,7 +72,7 @@ export function Composer({
               if (canSend) onSend();
             }
           }}
-          placeholder="Ask about a price, a programme, the doctors or the trip"
+          placeholder="Type a question"
           autoComplete="off"
           spellCheck
           enterKeyHint="send"

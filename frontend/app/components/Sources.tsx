@@ -1,4 +1,4 @@
-import { readableUrl } from "../lib/markdown";
+import { hostOf } from "../lib/markdown";
 import type { Source } from "../lib/types";
 import { Arrow } from "./Icons";
 
@@ -64,7 +64,14 @@ export function Sources({
                   </span>
                   <span className="source-meta">
                     <span className="source-type">{source.page_type}</span>
-                    <span className="source-url">{readableUrl(source.url)}</span>
+                    {/* The domain, never a shortened path: this package's slug is
+                        one unbreakable word 324px wide, so every shortening ended
+                        mid-word ("/Alte…"). The title above names the page and the
+                        link opens it; the whole address is in `title` on hover.
+                        Not read aloud, because the title is the link's name. */}
+                    <span className="source-url" title={source.url} aria-hidden="true">
+                      {hostOf(source.url)}
+                    </span>
                   </span>
                 </span>
               </a>

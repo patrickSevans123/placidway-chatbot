@@ -330,8 +330,10 @@ function TrustLine({ health }: { health: HealthState }) {
   return (
     <section className="trust" aria-label="About these answers">
       <p className="trust-line">
-        Answers come only from these {PAGE_COUNT} PlacidWay pages · Prices checked{" "}
-        <span className="tabular">{PRICES_CHECKED}</span> · Not covered, we say so
+        <span>Answers come only from these {PAGE_COUNT} PlacidWay pages</span>
+        <span>
+          Prices checked <span className="tabular">{PRICES_CHECKED}</span>
+        </span>
       </p>
     </section>
   );

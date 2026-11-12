@@ -294,6 +294,9 @@ def _dedupe_sources(sources: list[Source]) -> list[Source]:
 
 def _template(prompt: str, language: str, **kwargs) -> str:
     try:
+        # Reasoning models answer "no reasoning" by returning no text at all
+        # when the budget is small: 220 tokens was consumed before the first
+        # sentence. See `app/llm.py` on `reasoning_effort`.
         result = chat(
             [{"role": "user", "content": prompt.format(language=language, **kwargs)}],
             temperature=0.2,

@@ -78,7 +78,9 @@ uvicorn app.main:app --reload   # http://127.0.0.1:8000
 ```
 
 `LLM_API_KEY` is the only required setting. `LLM_BASE_URL` accepts any OpenAI-compatible endpoint:
-Mistral (the default), OpenAI, Groq, Together, Ollama, vLLM, or a router.
+OpenCode Go (the default), Mistral, OpenAI, Groq, Together, Ollama, vLLM, or a router. The Go
+gateway serves chat models only, so embeddings keep their own `EMBEDDING_BASE_URL` and
+`EMBEDDING_API_KEY`; leave them empty and they fall back to the chat values.
 
 The front end is a Next.js static export. `app/main.py` serves `frontend/out` when it exists and
 falls back to the original no-build `web/` when it does not, so the API works before the front end
@@ -113,7 +115,7 @@ curl http://127.0.0.1:8099/api/health
 | Web | FastAPI + uvicorn | small surface, typed request models, one file of routes |
 | Extraction | trafilatura + BeautifulSoup | trafilatura is the strongest open main-content extractor; BeautifulSoup reads the JSON-LD |
 | Retrieval | BM25 + `mistral-embed` + RRF | lexical and semantic each cover the other's misses; RRF needs no score calibration. The two evaluations disagree about whether the dense half pays for itself — both numbers are in `docs/EVALUATION.md` |
-| Generation | `deepseek-v4-1-flash-1017` via the Mistral API | strong instruction-following on citation rules, ~1 s per answer |
+| Generation | `deepseek-v4.1-flash` via OpenCode Go, `deepseek-v4-pro` as the fallback | strong instruction-following on citation rules, about 1 s of model time per answer, and a monthly allowance instead of per-token billing |
 | Storage | JSON corpus + SQLite | no database server to run, and the corpus diff is readable |
 | Front end | Next.js 16, static export | React for the streaming UI, but `output: 'export'` means no Node process in production: the files are served by FastAPI exactly like any other static asset |
 | Deploy | Docker + Cloudflare Tunnel | one container, no open inbound port, no certificate to manage |
@@ -367,13 +369,18 @@ tests/
 
 | Variable | Default | Meaning |
 |---|---|---|
-| `LLM_BASE_URL` | `https://api.mistral.ai/v1` | any OpenAI-compatible endpoint |
+| `LLM_BASE_URL` | `https://opencode.ai/inference/go/openai/v1` | any OpenAI-compatible endpoint |
 | `LLM_API_KEY` | — | **required** |
-| `LLM_MODEL` | `deepseek-v4-1-flash-1017` | primary model |
-| `LLM_FALLBACKS` | `mistral-large-latest,mistral-small-latest` | tried in order on error |
+| `LLM_MODEL` | `deepseek-v4.1-flash` | primary model |
+| `LLM_FALLBACKS` | `deepseek-v4-pro` | tried in order on error |
+| `LLM_USER_AGENT` | `PlacidWayAssessmentBot/1.0` | identifies this client to the gateway |
+| `LLM_SESSION_ID` | `placidway-guide` | sent as `x-opencode-session`; the Go gateway rejects a request without it |
+| `LLM_REASONING_EFFORT` | `none` | keeps a reasoning model from spending the token budget before it writes; empty omits the field |
 | `TOP_K` | `8` | chunks given to the model |
 | `USE_DENSE` | `1` | `0` runs BM25 alone; `docs/EVALUATION.md` has both scores |
 | `EMBEDDING_BACKEND` | `api` | `api`, `local` (fastembed), or `none` |
+| `EMBEDDING_BASE_URL` | the `LLM_BASE_URL` value | the Go gateway has no embeddings endpoint, so this is set separately |
+| `EMBEDDING_API_KEY` | the `LLM_API_KEY` value | a key that can reach `mistral-embed` |
 | `EMBEDDING_MODEL` | `mistral-embed` | embedding model |
 | `MIN_RETRIEVAL_SCORE` | `0.40` | below this, refuse |
 | `CRAWL_DELAY` | `3.0` | seconds between requests |
