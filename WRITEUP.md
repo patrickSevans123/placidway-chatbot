@@ -38,6 +38,15 @@ missing, which is what the content team can act on.
   would rather make than be wrong.
 - **Streaming precedes the final guard.** The money filter stops an unsupported
   price from appearing, but a wrong citation marker can be visible for the second
-  before a `replace` event corrects it.
+  before a `replace` event corrects it. In practice the model returns its whole
+  answer in under 300 ms after a 1.5-3 s wait, so a visitor rarely sees it arrive
+  in pieces at all.
+- **The price panel takes the first qualified figure in the answer.** When the
+  question leaves its subject implied rather than named, that figure can belong
+  to a sibling cancer package on a nearby page. It is always that page's own
+  price and always cites the page, but one browser session showed the panel and
+  the sentence under it naming different tiers of different packages. Six
+  attempts to reproduce it through the API produced coherent answers, so it is
+  recorded here rather than claimed fixed.
 - **One language pair at a time.** Retrieval is English-only, so Spanish and
   Arabic questions are rewritten to English for search.
