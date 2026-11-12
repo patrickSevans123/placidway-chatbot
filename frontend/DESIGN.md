@@ -1,88 +1,89 @@
 # Design notes
 
-The values below are not invented. Each one was read off placidway.com's own
-stylesheet or a rendered page and is recorded in `docs/BRAND.md`; this file says
-what was used and what was refused. Tokens live in `app/globals.css`, components
-in `app/ui.css`.
+Every colour below was read off placidway.com: computed values over a rendered
+page at 1280, and the colours declared in their CSS variables. Tokens in
+`app/globals.css`, components in `app/ui.css`.
 
-## Brand values used
+## Logo and icon
 
-| Value | Token | Where it appears |
+Their image CDN serves the artwork cropped at quality 85 (420x211, `#e85a4f` on
+transparency, ink box flush to the edges). From their 1850x931 original, cropped
+to the ink box and resampled with Lanczos: `public/placidway-logo.png` 246x124 and
+`placidway-logo@2x.png` 493x248. Nothing is redrawn, traced or hotlinked.
+
+It renders at 123x62 at 1280 (their `<img>` is 140x70 in a 70px bar, 2:1) and
+104x52 under 600px, with `width`/`height` attributes, `alt` "PlacidWay",
+`decoding="async"`, `fetchpriority="high"` and a 1x/2x srcset. The bar went from
+60px to 70px, their height. Image aborted, then loaded: header 71px both times,
+0px shift, at 1280 and 380; on a 380 screen the actions still end at 364.
+
+The icon is their official square app icon (`pw-192`, `pw-512`), not the coral
+wordmark: it is drawn to survive 32px, its background is opaque so iOS has
+something to round, and the wordmark at that size becomes a smear. Shipped as
+`favicon-32.png`, `apple-touch-icon.png` (180, from the 512) and `icon-192.png`,
+declared through `metadata.icons`; `themeColor` stays `#ffffff`.
+
+## Palette
+
+| Token | Value | Where it was measured |
 |---|---|---|
-| Coral `#e85a4f` | `--coral` | wordmark, Ask button, citation marks, step dot |
-| `#c6474c` | `--coral-ink` | coral that carries small text (4.74:1) |
-| `#95202e` | `--coral-deep` | hover on those links |
-| `#222` / `#333` | `--ink` / `--body` | headings and the figure / body copy |
-| `#555` / `#6a6a6a` | `--muted` / `--faint` | qualifiers and notes (7.4:1, 5.6:1) |
-| `#e0e0e0` | `--hair` | every card, panel and table border |
-| 10 px / 4 px | `--r-control` / `--r-card` | primary controls and the composer / panels |
-| their system stack | `--font` | the whole page, no webfont |
-| 15–16 px at 1.55 | `--t-body` | body copy; 600–700 on headings |
-| 18 px / 600 white | `.composer-button` | the Ask label, as on their hero CTA |
+| `--coral` | `#e85a4f` | rendered accent, 6 elements; the logo artwork |
+| `--coral-ink` | `#c6474c` | their `--light-red`; filled buttons |
+| `--coral-deep` | `#95202e` | their `--dark-red`; hover, disabled label |
+| `--coral-wash` | `#fdefee` | rendered coral wash, 5 elements |
+| `--coral-line` | `#f6d5d2` | derived: `#e85a4f` at 28% over white |
+| `--surface` | `#ffffff` | page background, 164 elements; `theme-color` |
+| `--wash` | `#f5f5f5` | their light section background, 11 elements |
+| `--wash-2` | `#f8f8f8` | their second light background, 6 elements |
+| `--ink` | `#222222` | their dark heading colour, 35 elements |
+| `--body` | `#333333` | their body colour, 623 elements |
+| `--muted` | `#555555` | their secondary text, 92 elements |
+| `--faint` | `#6a6a6a` | not theirs: their `#777` darkened, 4.48 -> 5.6:1 |
+| `--hair` | `#e9ebeb` | their `--light-gray`, now the border colour |
+| `--hair-strong` | `#c4c4c4` | their `--gray` |
 
-Coral never carries small text: at 11–15 px the token is `--coral-ink`. Measured
-contrast across 103 text-bearing elements at 1280 and 380: no failures, lowest
-passing pair 3.5:1 (the 22 px/700 wordmark, a large-text exception).
+What changed: `--coral-wash` `#fdf1f0` -> `#fdefee` (2 steps on every channel),
+`--wash` `#f1f1f1` -> `#f5f5f5` (+4), `--wash-2` `#f7f7f7` -> `#f8f8f8` (+1),
+`--hair` `#e0e0e0` -> `#e9ebeb` (+9 red, +11 green, +11 blue). `--coral-wash` is
+now also the disabled Ask fill, replacing a hand-picked `#fdeceb`. Filled buttons
+moved from `#e85a4f` to `#c6474c`: white on the bright coral is 3.05:1 and fails
+AA at both sizes used (15px/600, 18px/600); white on `#c6474c` is 4.77:1.
+Measured in the two states the page check never visits: Ask enabled 4.77, quote
+form open 4.77.
 
-## Layout decisions
+`#777` never carries text (4.48:1). `#a4b4ba` and `#7c8f96` are footer text on
+their dark slate only. The slate family (`#1d2b33`, `#24353e`, `#16222a`,
+`#3a507e`, `#0b6180`) is not used: at 12px a navy page-type label inside an
+otherwise grey source list became the only cool hue on the page and pulled the
+eye off the coral citation marks, the one thing that must be found.
 
-- **Header.** White, hairline underneath, the wordmark set as text in coral, a
-  quiet "Treatment guide", and one link out. Their mark is not redrawn or
-  hotlinked. Under 600 px the label is dropped rather than allowed to collide
-  with the actions.
-- **Empty state.** Not a hero. A compact headline, one sentence of what to
-  expect, then six bordered cards with thin line icons that submit their own
-  question on click. Their page pattern: heading over a row of real choices.
-- **The price is the hero.** Figure at 40 px/700 in `#222`, "USD" at 13 px/600
-  beside it, the qualifier to its right at 14 px in `--muted`, all on one
-  baseline, exactly as their package page prints "Price starting from". Bordered
-  hairline panel, 4 px radius, no shadow and no tint. The figure is the only
-  display-weight type on the page.
-- **Answers are prose.** No bubbles, no tails, no avatar. The question is a
-  14 px label above a document-like answer at a 66ch measure.
-- **Citations** are coral superscripts, real `#source-N` links, so they work
-  from the keyboard and without JavaScript (`:target` lights the card). A click
-  scrolls the card into view and gives it a coral left edge and a wash for 2.4 s.
-- **Sources** sit in one bordered block shaped like their "About Package" panel:
-  a titled header with a hairline under it, then one row per page with its
-  title, page type and real URL.
-- **Composer.** Fixed to the bottom, white, one hairline, 10 px radius, a coral
-  filled Ask button, a textarea that grows to 148 px, and Stop in its place
-  while the answer arrives. The page pads its own bottom by the composer's
-  measured height, so nothing is ever hidden under it.
-- **Trust line** where their accreditations row sits: one quiet sentence, "the
-  seven pages, prices checked 11 Nov 2026, not covered we say so". The right
-  column lists the seven pages by name, which is the honest equivalent of their
-  accreditation badges.
+## Layout
 
-## What the stream does, and what the screen says about it
+- **Header.** White, hairline under it, their logo, a quiet "Treatment guide" and
+  one link out. Under 600px the label is dropped and the logo steps down.
+- **Empty state.** A compact headline, one sentence, six bordered cards with line
+  icons that submit their own question.
+- **The price is the hero.** 40px/700 in `#222`, "USD" 13px/600 beside it, the
+  qualifier 14px in `--muted`, one baseline, hairline panel, no shadow.
+- **Answers are prose.** A 14px question label above a document at 66ch.
+- **Citations** are coral superscripts, real `#source-N` links, so they work from
+  the keyboard and without JavaScript (`:target` lights the card).
+- **Sources** in one bordered block shaped like their "About Package" panel.
+- **Composer.** Fixed, white, one hairline, a filled Ask button, Stop while the
+  answer arrives, page padded by its measured height.
 
-`stage` drives a two-step line ("Finding the pages" then "Writing the answer"),
-shown from the first second. `verifying` is not shown: the server spends about
-5 ms in it, so it can never be painted and claiming otherwise would be theatre.
-`token` appends, batched to one render per frame. `replace` **swaps** the body —
-buffered tokens are dropped and `text` is set to the new answer outright, never
-appended. `done` is authoritative.
+## What the stream does
 
-The guard sends `replace` on nearly every answer, because it collapses repeated
-pages and renumbers citations. That is not evidence a figure was removed, so the
-page does not claim a correction; it states what is certainly true — "this answer
-was checked against the pages before it was shown".
+`stage` drives a two-step line; `verifying` is never shown (about 5ms on the
+server). `token` appends, batched to one frame; `replace` **swaps** the body;
+`done` is authoritative. Nearly every answer gets replace, which is not evidence
+a figure was removed, so the page says only that the answer was checked.
 
-Every state is designed: empty, first token, streaming, verified, refusal
-(plain ink, not red), rate-limited with the wait from `Retry-After`, network
-error, offline. Each has words, not a spinner.
-## Rejected, and why
+## Rejected
 
-| Rejected | Why |
-|---|---|
-| Warm-paper/teal "clinical record" | The brief's premise: it shared nothing with the brand. |
-| Their avatar "Alice" | This one says "not on these pages". A face would promise a person who is not there. |
-| Their photography | The page sells a reading of seven documents; a stock photo competes with the answer. |
-| A gradient hero, icon tiles, shadows | Brand uses white, hairlines and a 10 px radius. Nothing else separates. |
-| Chat bubbles | It is a document-grounded reader; the composer is a field. |
-| Animated dots, blinking caret | Nothing here animates except the citation wash, and `prefers-reduced-motion` turns that off too. |
-| "AI-powered" badge, model name | The reader wants the price and the page, not the machinery. |
+Chat bubbles, an avatar, their photography, a gradient hero, a blinking caret and
+a second accent for page types: each competed with the answer or the coral marks.
+The page is a reading of seven documents, so the design stays a document.
 
 `ChatSurface` (state and shell) · `Turn` · `AnswerProse` · `PricePanel` ·
 `AnswerFooter` · `Sources` · `States` · `Composer` · `QuoteForm` · `EmptyState` ·

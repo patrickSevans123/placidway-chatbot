@@ -15,6 +15,9 @@
 
 /* ---------- Header ---------- */
 
+/* Their bar is 70px with a 2:1 logo in it, so ours is 70px too. The logo keeps
+   its 123x62 box in CSS as well as in the attributes: the header measures the
+   same before the PNG arrives as after it. */
 .top {
   position: sticky;
   top: 0;
@@ -31,28 +34,27 @@
   max-width: var(--page);
   margin: 0 auto;
   padding: 0 var(--gutter);
-  height: 60px;
+  height: 70px;
 }
 
 .brand {
   display: inline-flex;
-  align-items: baseline;
+  align-items: center;
   gap: 12px;
   min-width: 0;
 }
 
-.brand-name {
-  font-size: 22px;
-  font-weight: 700;
-  letter-spacing: -0.02em;
-  color: var(--coral);
+.brand-logo {
+  display: block;
+  width: 123px;
+  height: 62px;
+  flex: none;
 }
 
 .brand-rule {
   width: 1px;
   height: 14px;
   background: var(--hair-strong);
-  align-self: center;
   flex: none;
 }
 
@@ -885,13 +887,16 @@
   transition: background-color 140ms ease, color 140ms ease, border-color 140ms ease;
 }
 
+/* Filled buttons use their --light-red, not the brighter #e85a4f: white on the
+   bright coral is 3.05:1 and fails AA at every size on this page (15px/600 here,
+   18px/600 on Ask). White on #c6474c is 4.76:1. */
 .button-solid {
-  background: var(--coral);
+  background: var(--coral-ink);
   color: #fff;
 }
 
 .button-solid:hover {
-  background: var(--coral-ink);
+  background: var(--coral-deep);
 }
 
 .button-quiet {
@@ -1075,7 +1080,7 @@
     border: 1px solid var(--hair);
     border-radius: var(--r-card);
     position: sticky;
-    top: 80px;
+    top: 90px;
   }
 }
 
@@ -1202,7 +1207,9 @@
   color: var(--muted);
 }
 
-/* Their hero CTA: coral fill, white 18px/600 label, 10px radius. */
+/* Their hero CTA: coral fill, white 18px/600 label, 10px radius. The fill is
+   their --light-red for the same reason as .button-solid: 4.76:1 with white,
+   where #e85a4f is 3.05:1. */
 .composer-button {
   flex: none;
   display: inline-flex;
@@ -1212,7 +1219,7 @@
   height: 44px;
   padding: 0 20px;
   border-radius: var(--r-control);
-  background: var(--coral);
+  background: var(--coral-ink);
   color: #fff;
   font-size: 18px;
   font-weight: 600;
@@ -1221,7 +1228,7 @@
 }
 
 .composer-button:hover:not(:disabled) {
-  background: var(--coral-ink);
+  background: var(--coral-deep);
 }
 
 .composer-arrow {
@@ -1237,16 +1244,16 @@
 /* Disabled keeps the brand colour. A grey slab was the first thing on the page
    before anyone typed, and it made the only primary action read as dead; a
    washed coral with deep-coral text still reads as "not yet" while the one
-   accent stays on screen. */
+   accent stays on screen. The wash is their own coral wash token. */
 .composer-button:disabled {
-  background: #fdeceb;
+  background: var(--coral-wash);
   color: var(--coral-deep);
-  box-shadow: inset 0 0 0 1px #f6d5d2;
+  box-shadow: inset 0 0 0 1px var(--coral-line);
   cursor: not-allowed;
 }
 
 .composer-button:disabled:hover {
-  background: #fdeceb;
+  background: var(--coral-wash);
 }
 
 .composer-stop {
@@ -1325,12 +1332,18 @@ kbd {
 
 /* ---------- Narrow screens ---------- */
 
-/* On a phone the label is dropped: the wordmark plus two actions already fill
-   the bar, and "New question" sat on top of the label. */
+/* On a phone the label is dropped: the logo plus two actions already fill the
+   bar, and "New question" sat on top of the label. The logo steps down to
+   104x52, the same 2:1 box, so neither action is pushed off a 380px screen. */
 @media (max-width: 600px) {
   .brand-rule,
   .brand-sub {
     display: none;
+  }
+
+  .brand-logo {
+    width: 104px;
+    height: 52px;
   }
 
   .top-inner {

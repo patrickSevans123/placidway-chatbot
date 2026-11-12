@@ -1,29 +1,33 @@
 /* ==========================================================================
    PlacidWay treatment guide: brand tokens and page ground.
-   Values are from docs/BRAND.md, read off placidway.com's own CSS.
+   Every value below was measured on placidway.com: computed text and background
+   colours over a rendered page at 1280, and the colours declared in their own
+   CSS variables. DESIGN.md carries the table of what each one was read from.
    Component styles live in ui.css.
    ========================================================================== */
 
 :root {
-  /* Coral is the one accent. It carries the wordmark, the primary button and
+  /* Coral is the one accent. It carries the logo artwork, the primary button and
      citation marks. #e85a4f on white is 3.05:1, so it is never used for small
      text; coral-ink (4.74:1) is the text-weight version of the same colour. */
-  --coral: #e85a4f;
-  --coral-ink: #c6474c;
-  --coral-deep: #95202e;
-  --coral-wash: #fdf1f0;
+  --coral: #e85a4f; /* their rendered accent and the logo artwork */
+  --coral-ink: #c6474c; /* their --light-red */
+  --coral-deep: #95202e; /* their --dark-red */
+  --coral-wash: #fdefee; /* their rendered coral wash */
+  --coral-line: #f6d5d2; /* derived: #e85a4f at 28% over white, disabled edge */
 
-  --surface: #ffffff;
-  --wash: #f1f1f1;
-  --wash-2: #f7f7f7;
+  --surface: #ffffff; /* their page background and theme-color */
+  --wash: #f5f5f5;
+  --wash-2: #f8f8f8;
 
   --ink: #222222; /* headings and the price figure */
-  --body: #333333; /* body text */
+  --body: #333333; /* body text, their most used colour */
   --muted: #555555; /* 7.4:1: secondary text, qualifiers, notes */
-  --faint: #6a6a6a; /* 5.6:1: the lightest grey allowed to carry text */
+  --faint: #6a6a6a; /* 5.6:1: their #777 darkened past AA, the lightest grey
+                       allowed to carry text. #777 itself is 4.48:1. */
 
-  --hair: #e0e0e0; /* card and panel borders */
-  --hair-strong: #c4c4c4;
+  --hair: #e9ebeb; /* their --light-gray: every card and panel border */
+  --hair-strong: #c4c4c4; /* their --gray */
 
   --r-control: 10px; /* primary controls, the composer */
   --r-card: 4px; /* cards and panels */
@@ -49,9 +53,10 @@ html {
   -webkit-text-size-adjust: 100%;
   scroll-behavior: smooth;
   /* Anchors land above the fixed composer, whose real height the shell writes
-     into --dock. 88px is the fallback before the first measurement. */
+     into --dock. 88px is the fallback before the first measurement. The top
+     padding clears the 70px header plus a 28px gap. */
   scroll-padding-bottom: calc(var(--dock, 88px) + 16px);
-  scroll-padding-top: 88px;
+  scroll-padding-top: 98px;
 }
 
 @media (prefers-reduced-motion: reduce) {
