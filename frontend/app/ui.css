@@ -1,68 +1,48 @@
 /* ==========================================================================
-   Components. Tokens, type roles and the page ground are in globals.css.
+   Components. Tokens and the three-row shell are in globals.css; this file is
+   the chat's furniture.
 
-   The look is a prepared dossier: white paper, ink rules where a card would
-   normally sit, mono for anything that is a record (labels, numbers, dates) and
-   sans for anything read as a sentence. Coral is a mark, never a field: the
-   eyebrow tick, the lit note's edge, and the one filled button (Ask, which is a
-   solid coral-ink fill with white text at 4.77:1).
+   The rule everywhere: rules, not boxes. A 2px --rule-ink line is the one heavy
+   line in a region; everything else is a hairline (--rule on paper). Coral is a
+   mark: a citation glyph, a 5px square, the checked tick. One rounded corner
+   radius is allowed, and only on the question bubble: a question is spoken, an
+   answer is printed.
    ========================================================================== */
 
-/* ---------- Header: a masthead, not an app bar ---------- */
+/* ---------- Header: the mark and exactly one action ---------- */
 
-/* Their bar is 71px with a 2:1 logo in it, so ours is 71px too. The logo keeps
-   its 123x62 box in CSS as well as in the attributes: the header measures the
-   same before the PNG arrives as after it. */
 .top {
-  position: sticky;
-  top: 0;
-  z-index: 30;
+  flex: none;
   background: var(--surface);
   border-bottom: 1px solid var(--rule);
 }
 
-/* The masthead keeps its rule; content that scrolls under it fades in over the
-   20px below the rule instead of stopping on a cut line. Same treatment as the
-   dock at the other edge, so both ends of the page handle overlap the same way. */
-.top::after {
-  content: "";
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: 100%;
-  height: 20px;
-  background: linear-gradient(to bottom, var(--surface), rgba(255, 255, 255, 0));
-  pointer-events: none;
-}
 .top-inner {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  max-width: var(--page);
+  height: var(--head);
+  max-width: calc(var(--column) + var(--gutter) * 2);
   margin: 0 auto;
   padding: 0 var(--gutter);
-  height: 71px;
 }
 
 .brand {
   display: inline-flex;
   align-items: center;
-  gap: 16px;
+  gap: 14px;
   min-width: 0;
 }
 
+/* Their 2:1 artwork, at 104x52 in a 64px bar: 6px of air above and below. */
 .brand-logo {
   display: block;
-  width: 123px;
-  height: 62px;
+  width: 104px;
+  height: 52px;
   flex: none;
 }
 
-/* No rule between the mark and the label. A one-pixel pipe is a divider between
-   two one-line things, and this page has exactly two rules (--rule for every
-   divider, --rule-ink at 2px above the docket). The label is the page's one
-   label style, so it is 10.5px at .14em in --faint like every other label. */
 .brand-sub {
   font-family: var(--mono);
   font-size: var(--t-label);
@@ -74,101 +54,44 @@
   white-space: nowrap;
 }
 
-.top-actions {
-  display: flex;
-  align-items: center;
-  gap: 22px;
-  flex: none;
-}
-
+/* The bar's one action. A real edge, not an underline: with the date and the
+   outward link gone, an underlined word here would float like a lost nav item. */
 .top-new {
   display: inline-flex;
   align-items: center;
-  min-height: 44px;
+  gap: 7px;
+  flex: none;
+  min-height: 36px;
+  padding: 0 13px;
+  border: 1px solid var(--rule-field);
+  border-radius: var(--r-control);
   font-family: var(--mono);
   font-size: 12px;
   font-weight: 500;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.03em;
   color: var(--body);
-  transition: color var(--tick) var(--ease);
+  transition:
+    color var(--tick) var(--ease),
+    border-color var(--tick) var(--ease),
+    background-color var(--tick) var(--ease);
 }
 
 .top-new:hover {
-  color: var(--coral-deep);
-}
-
-.top-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  min-height: 44px;
-  font-family: var(--mono);
-  font-size: 12px;
-  font-weight: 500;
-  letter-spacing: 0.05em;
-  color: var(--body);
-  text-decoration: underline;
-  text-decoration-color: var(--hair-strong);
-  text-decoration-thickness: 1px;
-  text-underline-offset: 4px;
-  /* The underline is drawn in --ink on hover, not only recoloured, so the link
-     answers the pointer as clearly as a button does. */
-  transition:
-    color var(--tick) var(--ease),
-    text-decoration-color var(--tick) var(--ease);
-}
-
-.top-link:hover {
   color: var(--ink);
-  text-decoration-color: var(--ink);
+  border-color: var(--ink);
+  background: var(--wash-2);
 }
 
-.arrow {
-  width: 1em;
-  height: 1em;
-  flex: none;
+.top-new-plus {
+  font-family: var(--mono);
+  font-size: 14px;
+  line-height: 1;
+  color: var(--coral-ink);
 }
 
-.top-link .tiny {
-  width: 11px;
-  height: 11px;
-}
+/* ---------- Labels: one style, used where a label names a block ---------- */
 
-/* ---------- The sheet ---------- */
-
-/* One fixed sheet, 900px, centred. Both the measure and the margin column are
-   derived from it, so the answer never reflows its own proportions. */
-.page {
-  max-width: var(--page);
-  margin: 0 auto;
-  padding: 36px var(--gutter) 48px;
-}
-
-.layout {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: 40px;
-}
-
-.column {
-  min-width: 0;
-}
-
-/* Only the opening is two-column: the dossier, and the seven pages beside it. */
-@media (min-width: 880px) {
-  .layout-index {
-    grid-template-columns: minmax(0, 1fr) 292px;
-    gap: 56px;
-    align-items: start;
-  }
-}
-
-/* ---------- Opening: eyebrow, headline, one sentence ---------- */
-
-.eyebrow {
-  display: flex;
-  align-items: center;
-  gap: 10px;
+.label {
   font-family: var(--mono);
   font-size: var(--t-label);
   font-weight: 500;
@@ -176,389 +99,144 @@
   text-transform: uppercase;
   line-height: 1.4;
   color: var(--faint);
-  animation: rise 520ms var(--ease) backwards;
 }
 
-.eyebrow-tick {
-  width: 6px;
-  height: 6px;
-  background: var(--coral);
-  flex: none;
+/* ---------- Before the first question ---------- */
+
+/* The opening sits on the floor of the thread, just above the field, the way a
+   conversation with nothing in it starts from the bottom of the screen. */
+.opening {
+  margin-top: auto;
+  padding-bottom: 4px;
 }
 
-.intro-title {
-  margin-top: 16px;
-  /* 11em = 396px at the 36px display size: between "What cancer treatment"
-     (369px) and that line plus " at" (408px), so the headline breaks at its
-     clause boundary at every clamp step instead of leaving "at" dangling. */
-  max-width: 11em;
-  font-size: var(--t-display);
+.opening-title {
+  max-width: 20em;
+  font-size: clamp(26px, 2.4vw, 32px);
   font-weight: 600;
-  line-height: 1.12;
-  letter-spacing: -0.022em;
+  line-height: 1.18;
+  letter-spacing: -0.025em;
   color: var(--ink);
-  /* `pretty`, not `balance`: measured at 1280, balance splits this headline
-     after "cancer" (201px / 365px), pretty splits it after "treatment"
-     (369px / 197px), which is the clause boundary. */
   text-wrap: pretty;
-  animation: rise 520ms var(--ease) 70ms backwards;
+  animation: rise 460ms var(--ease) backwards;
 }
 
-.intro-lede {
-  margin-top: 14px;
-  max-width: 48ch;
+.opening-lede {
+  margin-top: 12px;
+  max-width: 62ch;
   font-size: var(--t-lead);
   line-height: 1.55;
   color: var(--muted);
-  animation: rise 520ms var(--ease) 150ms backwards;
+  animation: rise 460ms var(--ease) 50ms backwards;
 }
 
-.empty {
-  margin-top: 0;
-}
-
-/* ---------- The docket: two programmes, two figures ---------- */
-
-/* The one 2px ink rule in the document, and the one gesture the page makes on
-   arrival: it draws itself in from the left. It separates the opening text
-   above from the schedule below, so it earns its weight. */
-.docket {
-  position: relative;
-  margin-top: 34px;
-  padding-top: 18px;
-  animation: rise 520ms var(--ease) 210ms backwards;
-}
-
-.docket::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 2px;
-  background: var(--rule-ink);
-  transform: scaleX(0);
-  transform-origin: left center;
-  animation: rule 620ms var(--ease) 200ms forwards;
-}
-
-.docket-head {
-  font-family: var(--mono);
-  font-size: var(--t-label);
-  font-weight: 500;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  line-height: 1.4;
-  color: var(--faint);
-}
-
-/* No rule between the caption and the first row: the caption labels the rows, it
-   is not a separate block, so nothing is being divided there. */
-.docket-list {
-  margin-top: 8px;
-}
-
-.docket-row {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 16px;
-  padding: 14px 0;
-}
-
-.docket-row + .docket-row {
-  border-top: 1px solid var(--rule);
-}
-
-.docket-term {
-  font-size: var(--t-body);
-  font-weight: 500;
-  line-height: 1.4;
-  color: var(--ink);
-}
-
-/* The unit's baseline is stood on the figure's cap line. With a flex baseline
-   group the unit's baseline would sit on the figure's baseline, 32px too low and
-   reading as a subscript; `--figure-cap` is the measured cap height of the
-   number itself, so its top ends exactly where the number's top does. */
-.docket-value {
-  display: flex;
-  align-items: baseline;
-  gap: 7px;
-  min-width: 0;
-}
-
-.docket-amount {
-  font-family: var(--mono);
-  font-size: var(--t-figure);
-  font-weight: 500;
-  line-height: 1;
-  letter-spacing: -0.03em;
-  color: var(--ink);
-}
-
-.docket-cur {
-  position: relative;
-  bottom: calc(var(--figure-cap) * 1em);
-  font-family: var(--mono);
-  font-size: 12px;
-  font-weight: 400;
-  line-height: 1;
-  letter-spacing: 0.06em;
-  color: var(--faint);
-}
-
-.docket-note {
-  margin-top: 12px;
-  max-width: 52ch;
-  font-size: var(--t-small);
-  line-height: 1.55;
-  color: var(--muted);
-}
-
-/* ---------- Three questions, set as rows ---------- */
-
-/* No rule between the docket's note and this list: the rule would separate a
-   paragraph from a heading one line below it. Space does that job here; the
-   first row's own hairline is the top edge of the list. */
-.starters {
-  margin-top: 44px;
-  animation: rise 520ms var(--ease) 280ms backwards;
-}
-
-.starters-head {
-  font-family: var(--mono);
-  font-size: var(--t-label);
-  font-weight: 500;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  line-height: 1.4;
-  color: var(--faint);
-}
-
-.prompt-list {
+/* Three questions to start from, set as full-width rows with their own edge and
+   a coral mark in the margin. Equal width, so three questions of different
+   lengths make a block rather than a stepped edge; the arrangement holds at
+   every width because it is one column from the start. */
+.chips {
   display: grid;
-  margin-top: 10px;
-}
-
-/* A row, not a card: a full-width hit area, a numbered margin, one hairline
-   under it, which turns ink while the pointer is on the row. */
-.prompt {
-  display: grid;
-  grid-template-columns: 26px minmax(0, 1fr) 16px;
-  align-items: baseline;
-  gap: 0 12px;
-  width: 100%;
-  padding: 14px 0;
-  border-bottom: 1px solid var(--rule);
-  transition: border-color var(--tick) var(--ease);
-}
-
-.prompt:hover {
-  border-bottom-color: var(--ink);
-}
-
-.prompt-num {
-  font-family: var(--mono);
-  font-size: 11px;
-  line-height: 1.9;
-  letter-spacing: 0.06em;
-  color: var(--faint);
-}
-
-.prompt-body {
-  display: grid;
-  gap: 2px;
-  min-width: 0;
-}
-
-/* The title's underline is drawn from nothing to currentColor in 160ms: no
-   layout change, and the one thing on the row that says "this opens". */
-.prompt-q {
-  font-size: 15px;
-  font-weight: 500;
-  line-height: 1.45;
-  color: var(--ink);
-  overflow-wrap: anywhere;
-  text-decoration: underline;
-  text-decoration-color: transparent;
-  text-decoration-thickness: 1px;
-  text-underline-offset: 4px;
-  transition: text-decoration-color var(--tick) var(--ease);
-}
-
-.prompt-note {
-  font-size: 12px;
-  line-height: 1.5;
-  color: var(--muted);
-  overflow-wrap: anywhere;
-}
-
-.prompt-arrow {
-  width: 14px;
-  height: 14px;
-  align-self: start;
-  color: var(--faint);
-  transition:
-    color var(--tick) var(--ease),
-    transform var(--tick) var(--ease);
-}
-
-.prompt:hover .prompt-q,
-.prompt:focus-visible .prompt-q {
-  text-decoration-color: var(--ink);
-}
-
-.prompt:hover .prompt-arrow,
-.prompt:hover .prompt-num,
-.prompt:focus-visible .prompt-arrow,
-.prompt:focus-visible .prompt-num {
-  color: var(--ink);
-}
-
-.prompt:hover .prompt-arrow,
-.prompt:focus-visible .prompt-arrow {
-  transform: translateX(3px);
-}
-
-/* ---------- The seven pages: the one tinted surface ---------- */
-
-/* The one tonal block on the page, so it has no rule around its top: the tint
-   is its edge. Inside it, hairlines separate real rows only. */
-.contents {
-  padding: 20px 20px 18px;
-  background: var(--wash);
-  animation: rise 520ms var(--ease) 240ms backwards;
-}
-
-.contents-label {
-  font-family: var(--mono);
-  font-size: var(--t-label);
-  font-weight: 500;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  line-height: 1.4;
-  color: var(--faint);
-}
-
-.contents-list {
-  display: grid;
-  margin-top: 6px;
-}
-
-.contents-row {
-  display: grid;
-  grid-template-columns: 26px minmax(0, 1fr);
   gap: 8px;
-  padding: 9px 0;
+  margin-top: 22px;
+  animation: rise 460ms var(--ease) 100ms backwards;
 }
 
-.contents-row + .contents-row {
-  border-top: 1px solid var(--rule);
-}
-
-.contents-num {
-  font-family: var(--mono);
-  font-size: 11px;
-  line-height: 1.9;
-  color: var(--faint);
-}
-
-.contents-body {
-  display: grid;
-  gap: 1px;
-  min-width: 0;
-}
-
-.contents-title {
-  font-size: 14px;
-  font-weight: 500;
+.chip {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  width: 100%;
+  min-height: 46px;
+  padding: 10px 14px;
+  border: 1px solid var(--rule-field);
+  border-radius: var(--r-control);
+  background: var(--surface);
+  font-size: 15px;
   line-height: 1.35;
   color: var(--ink);
+  text-align: left;
   overflow-wrap: anywhere;
+  transition:
+    border-color var(--tick) var(--ease),
+    background-color var(--tick) var(--ease);
 }
 
-.contents-note {
-  font-size: 12px;
-  line-height: 1.45;
+.chip-mark {
+  width: 5px;
+  height: 5px;
+  flex: none;
+  background: var(--coral-ink);
+}
+
+.chip:hover {
+  border-color: var(--ink);
+  background: var(--wash-2);
+}
+
+/* The corpus, stated once, where the first question is chosen. The numbers are
+   the index's own; the date is the one the prices were confirmed on. */
+.opening-note {
+  margin-top: 20px;
+  font-family: var(--mono);
+  font-size: 11.5px;
+  line-height: 1.7;
   color: var(--faint);
+  animation: rise 460ms var(--ease) 150ms backwards;
 }
 
-.contents-foot {
-  margin-top: 12px;
-  font-size: 12px;
-  line-height: 1.5;
-  color: var(--faint);
+.opening-note .dot::after {
+  content: "·";
+  margin: 0 7px;
+  color: var(--rule-field);
 }
 
-/* ---------- A question and its answer ---------- */
+/* ---------- The thread: a question, then the answer ---------- */
 
 .turns {
-  display: grid;
-  gap: 52px;
-}
-
-/* Each answer opens with the sheet's only hairline-weight section break. It is
-   --rule, not ink: the docket's 2px rule is the document's one heavy line, and
-   the question that follows is the section's own heading. */
-.turn {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: 24px;
-  padding-top: 20px;
-  border-top: 1px solid var(--rule);
-}
-
-.turn-body {
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  min-width: 0;
-  max-width: var(--read);
+  gap: 36px;
+  padding-top: 4px;
 }
 
-.turn-question {
+.turn {
   display: flex;
-  align-items: baseline;
-  gap: 10px;
-  font-size: var(--t-lead);
-  font-weight: 500;
-  line-height: 1.45;
-  color: var(--ink);
-}
-
-.turn-num {
-  flex: none;
-  font-family: var(--mono);
-  font-size: 11px;
-  line-height: 1.9;
-  letter-spacing: 0.06em;
-  color: var(--faint);
-}
-
-.turn-question-text {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
   min-width: 0;
+}
+
+/* The visitor's question is the only filled, rounded thing on the page: a bubble
+   on the right, its corner nearest the answer squared off, the way a spoken line
+   is set against a printed one. */
+.ask {
+  align-self: flex-end;
+  max-width: min(82%, 520px);
+  padding: 9px 16px 10px;
+  background: var(--wash);
+  border-radius: var(--r-bubble);
+  border-bottom-right-radius: var(--r-control);
+  font-size: var(--t-body);
+  font-weight: 400;
+  line-height: 1.5;
+  color: var(--ink);
   overflow-wrap: anywhere;
 }
 
-/* The answer is a document with an apparatus: text in the measure, the pages it
-   came from in a sticky margin column beside it. */
-@media (min-width: 880px) {
-  .turn {
-    grid-template-columns: minmax(0, 1fr) var(--margin-col);
-    gap: var(--margin-gap);
-  }
-
-  .sources {
-    grid-column: 2;
-    grid-row: 1;
-    align-self: start;
-    position: sticky;
-    top: 96px;
-  }
+/* The answer keeps the column and the paper ground: it carries citations, a
+   sources disclosure, a price record and a form, none of which belong in a
+   bubble. */
+.reply {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 14px;
+  width: 100%;
+  min-width: 0;
 }
 
-/* ---------- Streaming stage ---------- */
+/* ---------- Streaming ---------- */
 
 .stage {
   display: flex;
@@ -580,7 +258,7 @@
 .stage-step {
   width: 16px;
   height: 2px;
-  background: var(--hair-strong);
+  background: var(--rule-field);
   transition: background-color 240ms ease;
 }
 
@@ -594,15 +272,14 @@
 
 .waiting {
   font-size: 15px;
-  color: var(--faint);
+  color: var(--muted);
 }
 
-/* ---------- Prose: reading text, not chat bubbles ---------- */
+/* ---------- Prose: the answer, read as writing ---------- */
 
 .prose {
-  max-width: var(--read);
   font-size: var(--t-body);
-  line-height: 1.62;
+  line-height: 1.65;
   color: var(--body);
   overflow-wrap: break-word;
   text-wrap: pretty;
@@ -656,7 +333,7 @@
   font-size: 12px;
   font-weight: 500;
   line-height: 1.75;
-  color: var(--coral-ink);
+  color: var(--coral-deep);
 }
 
 .prose-stream {
@@ -665,9 +342,13 @@
 
 /* ---------- Citations: a superscript in the record voice ---------- */
 
-/* A real link at every size: coral-ink so the 10px glyph passes AA, and an
-   underline on hover and focus so the affordance is not colour alone. */
+/* A real link at every size: coral-ink so the 10px glyph passes AA (4.77:1),
+   with an underline on hover and focus so the affordance is not colour alone.
+   `inline`, never `inline-block`: an atomic box lets Chrome strand a raised
+   marker on a line of its own. */
 .cite {
+  display: inline;
+  padding: 0 1px;
   font-family: var(--mono);
   font-size: 10px;
   font-weight: 500;
@@ -681,17 +362,9 @@
   text-decoration-color: transparent;
   text-decoration-thickness: 1px;
   text-underline-offset: 2px;
-  transition: background-color 120ms ease, color 120ms ease;
-}
-
-/* It must be `inline`, not `inline-block`: an inline-block is an atomic box and
-   Chrome will break the line before one, leaving a lone raised marker on its own
-   line. The padding is cancelled by a matching negative margin so the glyph sits
-   tight against the word it follows and the full stop after it. */
-.prose a.cite {
-  display: inline;
-  padding: 0 1px;
-  margin: 0 -1px;
+  transition:
+    background-color 120ms ease,
+    color 120ms ease;
 }
 
 .cite:hover,
@@ -701,117 +374,62 @@
   text-decoration-color: currentColor;
 }
 
-/* ---------- The figure: the one display object ---------- */
-
-/* Set like a printed schedule line: a mono caption, the number at display size
-   in tabular figures, the qualifier and the page it came from under it. No box,
-   no tint, and no rule of its own: the size does the work, and the document's
-   one 2px rule stands above the docket. */
-
-.figure-label {
+/* The separator between two markers the model wrote side by side. It carries
+   the same raised position and colour as the glyphs, so "1,3" reads as one
+   superscript, but it is not a link and has no focus ring of its own. */
+.cite-sep {
+  display: inline;
+  padding: 0;
   font-family: var(--mono);
-  font-size: var(--t-label);
-  font-weight: 500;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  line-height: 1.4;
-  color: var(--faint);
-}
-
-.figure-line {
-  display: flex;
-  align-items: baseline;
-  flex-wrap: wrap;
-  gap: 0 7px;
-  margin-top: 6px;
-}
-
-.figure-amount {
-  font-family: var(--mono);
-  font-size: var(--t-figure);
-  font-weight: 500;
-  line-height: 1;
-  letter-spacing: -0.03em;
-  color: var(--ink);
-}
-
-/* The same measured cap-line placement as the docket's unit: the figure sits in
-   an answer the same way it sits on the opening, so the two cannot drift. */
-.figure-cur {
-  position: relative;
-  bottom: calc(var(--figure-cap) * 1em);
-  font-family: var(--mono);
-  font-size: 12px;
-  font-weight: 400;
-  letter-spacing: 0.06em;
-  line-height: 1;
-  color: var(--faint);
-}
-
-.figure-qualifier {
-  flex-basis: 100%;
-  margin-top: 6px;
-  font-size: 15px;
-  line-height: 1.5;
-  color: var(--muted);
-}
-
-.price-cite {
   font-size: 10px;
-}
-
-.figure-from {
-  margin-top: 6px;
-  font-size: var(--t-small);
+  font-weight: 500;
   line-height: 1.5;
-  color: var(--faint);
-}
-
-/* A control, not a label: the mono labels on this page are uppercase and
-   settled above the block they name, so this one is sentence case and carries no
-   rule. Grey, not ink, because it must not compete with the figure above; the
-   chevron is the only coral. */
-.figure-toggle {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  min-height: 44px;
-  margin-top: 2px;
-  font-family: var(--mono);
-  font-size: 12px;
-  font-weight: 400;
-  letter-spacing: 0.01em;
-  color: var(--muted);
-}
-
-.figure-toggle:hover {
-  color: var(--ink);
-}
-
-.figure-toggle .chevron {
+  vertical-align: super;
+  white-space: nowrap;
   color: var(--coral-ink);
 }
 
-.chevron {
-  width: 14px;
-  height: 14px;
-  transition: transform 160ms ease;
+/* ---------- What the answer cost, and whether it was checked ---------- */
+
+.checked-line {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-size: var(--t-small);
+  line-height: 1.5;
+  color: var(--muted);
 }
 
-.chevron.is-open {
-  transform: rotate(180deg);
+.checked-mark {
+  width: 5px;
+  height: 5px;
+  background: var(--coral);
+  flex: none;
+  transform: translateY(-1px);
 }
 
-/* ---------- Answer footer: one text row, then the quiet facts ---------- */
+/* The per-answer boundary line. It appears only when the API asks for it, and it
+   sits inside the answer because that is the thing it qualifies. */
+.disclaimer {
+  max-width: 62ch;
+  padding-left: 11px;
+  border-left: 2px solid var(--coral-line);
+  font-size: var(--t-small);
+  line-height: 1.55;
+  color: var(--muted);
+}
 
-/* The apparatus is smaller than the answer and says so in size, not in boxes.
-   One 12px text row with hairline separators: three things to do, and nothing
-   that looks like a second set of buttons competing with the prose above. A
-   hairline separates it from the answer, which is the only reason it has one. */
+.disclaimer strong {
+  font-weight: 600;
+  color: var(--ink);
+}
+
+/* ---------- Under the answer: copy, rating, the facts ---------- */
+
 .answer-foot {
   display: grid;
   gap: 8px;
-  padding-top: 12px;
+  padding-top: 10px;
   border-top: 1px solid var(--rule);
 }
 
@@ -822,8 +440,7 @@
   gap: 0 14px;
 }
 
-/* A 44px hit box drawn as a line of text: no border, no fill, --muted at rest,
-   --ink under the pointer or while pressed. */
+/* A 44px hit box drawn as a line of text: no border, no fill. */
 .tool {
   display: inline-flex;
   align-items: center;
@@ -841,18 +458,6 @@
   color: var(--ink);
 }
 
-/* Between two actions, never before the first: a separator with nothing on its
-   left is a rule drawn for its own sake. The rate group is inline, so the
-   separator is a real 1px box, inset by 16px from the row's top. */
-.tool + .rate-group::before {
-  content: "";
-  display: inline-block;
-  width: 1px;
-  height: 11px;
-  margin-right: 14px;
-  background: var(--rule);
-}
-
 .copy-icon {
   width: 13px;
   height: 13px;
@@ -865,6 +470,18 @@
   gap: 0 2px;
 }
 
+/* One separator between the two halves of the row, never before the first
+   item: a separator with nothing on its left is a rule drawn for its own sake. */
+.tool + .rate-group::before {
+  content: "";
+  display: inline-block;
+  align-self: center;
+  width: 1px;
+  height: 11px;
+  margin-right: 12px;
+  background: var(--rule);
+}
+
 .rate-question {
   margin-right: 4px;
   font-family: var(--mono);
@@ -873,8 +490,6 @@
   color: var(--muted);
 }
 
-/* The thumbs keep the row's size: a 12px label, a 14px icon, no box. The
-   pressed one is the only coral in this row, and it is text, not a fill. */
 .rate {
   display: inline-flex;
   align-items: center;
@@ -911,20 +526,6 @@
   flex: none;
 }
 
-/* One separator, between the question and the pair of answers: [Helpful?] | [Yes]
-   [No]. A line inside the pair read as a cut between two halves of one answer.
-   `align-self: center` centres it on the 44px row whatever the buttons do; no
-   baseline is involved, so it cannot hang above the words. */
-.rate-group::before {
-  content: "";
-  display: inline-block;
-  align-self: center;
-  width: 1px;
-  height: 11px;
-  margin-right: 12px;
-  background: var(--rule);
-}
-
 .rate-note {
   font-family: var(--mono);
   font-size: 12px;
@@ -932,11 +533,9 @@
   color: var(--faint);
 }
 
-/* From one page · Answered in 3.4 s · Prices checked 11 Nov 2026: the facts that
-   make the answer checkable, one step below the answer, in --faint so the line
-   is present without pulling the eye from the prose. The dots are drawn by CSS
-   as a trailing mark on the item before them, so a wrapped line can never begin
-   on a stranded separator. */
+/* Answered in 3.4 s · Prices checked 11 Nov 2026: the facts that make the answer
+   checkable, one step below the answer. The dots trail the clause before them,
+   so a wrapped line can never start on a stranded mark. */
 .provenance {
   display: flex;
   align-items: center;
@@ -952,63 +551,67 @@
 .provenance-item:not(:last-child)::after {
   content: "·";
   margin: 0 8px;
-  color: var(--hair-strong);
+  color: var(--rule-field);
 }
 
-/* The quiet line that says the text was checked, in the place their
-   "Medically reviewed by …" line sits on a package page. */
-.checked-line {
-  display: flex;
-  align-items: baseline;
-  gap: 8px;
-  font-size: var(--t-small);
-  line-height: 1.5;
-  color: var(--muted);
-}
+/* ---------- The pages behind one answer, folded away ---------- */
 
-.checked-mark {
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  background: var(--coral);
-  flex: none;
-  transform: translateY(-1px);
-}
-
-/* The footer's own rule is drawn only on the prose's measure, not out to the
-   margin column: it closes the answer, and the margin beside it is a separate
-   block. */
-@media (min-width: 880px) {
-  .answer-foot {
-    max-width: var(--read);
-    margin-right: auto;
-  }
-}
-
-/* ---------- Margin notes: the apparatus ---------- */
-
+/* A native disclosure: the citation glyphs are what open it, and a reader can
+   also open it by hand. `list-style: none` removes the marker in Firefox and
+   Safari; the chevron is the marker. */
 .sources {
-  max-width: var(--read);
-  min-width: 0;
+  padding-top: 2px;
+  border-top: 1px solid var(--rule);
 }
 
-.sources-head {
+.sources-summary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
   font-family: var(--mono);
-  font-size: var(--t-label);
+  font-size: 12px;
   font-weight: 500;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
+  letter-spacing: 0.03em;
   line-height: 1.4;
+  color: var(--muted);
+  cursor: pointer;
+  list-style: none;
+  transition: color var(--tick) var(--ease);
+}
+
+.sources-summary::-webkit-details-marker {
+  display: none;
+}
+
+.sources-summary:hover {
+  color: var(--ink);
+}
+
+.sources-count {
+  font-weight: 400;
   color: var(--faint);
+}
+
+.chevron {
+  width: 12px;
+  height: 12px;
+  flex: none;
+  transition: transform var(--tick) var(--ease);
+}
+
+.chevron.is-open {
+  transform: rotate(180deg);
 }
 
 .source-list {
   display: grid;
-  margin-top: 8px;
+  margin-bottom: 4px;
+  animation: rise 200ms var(--ease) backwards;
 }
 
 /* Every level of this chain is a grid item, and a grid item defaults to
-   min-width:auto, so one long URL would widen the whole page on a phone. */
+   min-width:auto, so one long address would widen the column on a phone. */
 .source-list,
 .source,
 .source-link {
@@ -1016,19 +619,20 @@
   max-width: 100%;
 }
 
-.source + .source {
+.source {
   border-top: 1px solid var(--rule);
 }
 
-/* The negative horizontal margin makes the tint 6px wider than the text, so the
-   2px coral edge of a lit note has room beside the number instead of sitting on
-   it. */
+.source:last-child {
+  border-bottom: 1px solid var(--rule);
+}
+
 .source-link {
   display: grid;
-  grid-template-columns: 22px minmax(0, 1fr);
-  gap: 8px;
-  padding: 11px 6px;
-  margin: 0 -6px;
+  grid-template-columns: 20px minmax(0, 1fr);
+  gap: 10px;
+  padding: 9px 8px;
+  margin: 0 -8px;
   transition: background-color var(--tick) var(--ease);
 }
 
@@ -1045,20 +649,20 @@
 
 .source-body {
   display: grid;
-  gap: 3px;
+  gap: 2px;
   min-width: 0;
   max-width: 100%;
 }
 
 .source-title {
-  font-size: 13px;
+  font-size: 13.5px;
   font-weight: 500;
   line-height: 1.4;
   color: var(--ink);
   min-width: 0;
   overflow-wrap: anywhere;
   text-decoration: underline;
-  text-decoration-color: var(--hair-strong);
+  text-decoration-color: var(--rule-field);
   text-decoration-thickness: 1px;
   text-underline-offset: 3px;
   transition:
@@ -1066,8 +670,6 @@
     text-decoration-color var(--tick) var(--ease);
 }
 
-/* The title's underline is drawn to --ink in 160ms: no layout change, and the
-   one thing on the row that says "this opens". */
 .source-link:hover .source-title {
   text-decoration-color: var(--ink);
 }
@@ -1076,7 +678,7 @@
   display: inline-block;
   width: 10px;
   height: 10px;
-  margin-left: 4px;
+  margin-left: 5px;
   color: var(--faint);
 }
 
@@ -1086,62 +688,104 @@
   align-items: baseline;
   gap: 2px 8px;
   min-width: 0;
-}
-
-/* The page type was a bordered pill; here it is a stamped word in the record
-   voice, which is what it actually is. */
-.source-type {
   font-family: var(--mono);
-  font-size: 10px;
-  font-weight: 500;
-  letter-spacing: 0.09em;
-  text-transform: uppercase;
+  font-size: 10.5px;
   line-height: 1.6;
-  color: var(--muted);
-  white-space: nowrap;
+  color: var(--faint);
 }
 
-/* The domain is a whole word and never a cut one. A path cannot be shown here:
-   this package's slug is a single 324px word in a 194px column, so any shortening
-   ends mid-word ("/Alte…"). The page's name and its full address live in the title
-   row above; this is the address bar, not the address. */
+.source-type {
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
 .source-url {
-  font-family: var(--mono);
-  font-size: 10px;
-  line-height: 1.55;
-  color: var(--faint);
   min-width: 0;
   max-width: 100%;
   overflow-wrap: anywhere;
 }
 
-/* Clicking a [n] tints the note and draws a coral edge: a status mark, not
-   decoration, and no movement. */
-.source.is-lit {
-  animation: lit 2400ms ease-out 1;
-}
-
-.source.is-lit .source-link {
-  box-shadow: inset 2px 0 0 var(--coral);
-}
-
-/* Works without JavaScript too, because the citation is a real #source-N link. */
+/* The lit note: a tinted ground and a coral title. No edge, no box. */
+.source[data-lit="true"],
 .source:target {
   background: var(--coral-wash);
 }
 
-.source:target .source-link {
-  box-shadow: inset 2px 0 0 var(--coral);
+.source[data-lit="true"] .source-num,
+.source:target .source-num,
+.source[data-lit="true"] .source-title,
+.source:target .source-title {
+  color: var(--coral-deep);
 }
 
-@keyframes lit {
-  0%,
-  70% {
-    background-color: var(--coral-wash);
-  }
-  100% {
-    background-color: transparent;
-  }
+/* ---------- The price record, once per answer ---------- */
+
+/* The corpus's own two figures, printed beside an answer that cites the page
+   they are on. Nothing here is read out of the model's prose: these are the same
+   constants the index carries, and the note says where they are printed. */
+.price-record {
+  padding-top: 10px;
+  border-top: 1px solid var(--rule);
+}
+
+.price-list {
+  display: grid;
+  margin-top: 4px;
+}
+
+.price-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 4px 0 5px;
+}
+
+.price-row + .price-row {
+  border-top: 1px solid var(--rule);
+}
+
+.price-term {
+  font-size: 13.5px;
+  font-weight: 500;
+  line-height: 1.4;
+  color: var(--ink);
+}
+
+.price-value {
+  font-family: var(--mono);
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+}
+
+.price-unit {
+  margin-left: 5px;
+  font-size: 10.5px;
+  font-weight: 400;
+  letter-spacing: 0.06em;
+  color: var(--faint);
+}
+
+.price-note {
+  margin-top: 8px;
+  max-width: 58ch;
+  font-size: 12px;
+  line-height: 1.55;
+  color: var(--muted);
+}
+
+.price-note a {
+  color: var(--ink);
+  text-decoration: underline;
+  text-decoration-color: var(--rule-field);
+  text-underline-offset: 3px;
+}
+
+.price-note a:hover {
+  text-decoration-color: var(--ink);
 }
 
 /* ---------- Notices: stopped, failed, limited ---------- */
@@ -1160,6 +804,7 @@
 
 .notice-text {
   margin-top: 6px;
+  max-width: 62ch;
   font-size: 15px;
   line-height: 1.6;
   color: var(--muted);
@@ -1183,14 +828,6 @@
 
 /* ---------- Refusal: information, not an error ---------- */
 
-/* The turn already opens with the document's hairline, so the refusal carries no
-   second one. Its lead was a seventh uppercase label for a block it does not
-   name; it is now a title in the same voice as the notices' titles, which is
-   what it is. */
-.refusal {
-  padding-top: 0;
-}
-
 .refusal-lead {
   font-size: var(--t-title);
   font-weight: 600;
@@ -1201,6 +838,7 @@
 
 .refusal-text {
   margin-top: 8px;
+  max-width: 62ch;
   font-size: var(--t-body);
   line-height: 1.62;
   color: var(--body);
@@ -1208,6 +846,7 @@
 
 .refusal-help {
   margin-top: 8px;
+  max-width: 62ch;
   font-size: 15px;
   line-height: 1.6;
   color: var(--muted);
@@ -1219,8 +858,6 @@
 
 /* ---------- Buttons ---------- */
 
-/* One shape for every button on the page: 44px tall, 3px radius. Where the
-   filled button is a link (a quote refusal) this class supplies the shape. */
 .button {
   display: inline-flex;
   align-items: center;
@@ -1238,8 +875,8 @@
     border-color var(--tick) var(--ease);
 }
 
-/* Filled buttons use their --light-red, not the brighter #e85a4f: white on the
-   bright coral is 3.05:1 and fails AA at 15px/600. White on #c6474c is 4.77:1. */
+/* White on their --light-red is 4.77:1. White on the bright #e85a4f is 3.05:1
+   and would fail at 15px/600. */
 .button-solid {
   background: var(--coral-ink);
   color: #fff;
@@ -1262,13 +899,6 @@
 
 .button:disabled {
   cursor: default;
-}
-
-/* Disabled is one step back, not a second colour: the same coral, held at 60%.
-   A pale coral fill with a coral border read as broken, which is the worst thing
-   a primary action can look like while someone is still typing. */
-.button-solid:disabled {
-  background: var(--coral-ink);
   opacity: 0.6;
 }
 
@@ -1279,11 +909,14 @@
   align-items: center;
   gap: 6px;
   min-height: 44px;
+  align-self: flex-start;
   font-size: 15px;
   font-weight: 600;
   color: var(--coral-ink);
   text-decoration: underline;
-  text-decoration-color: var(--coral-line);
+  /* A link that is only a colour is not a link. The underline carries the
+     affordance at the same weight as the word it sits under. */
+  text-decoration-color: var(--coral-ink);
   text-decoration-thickness: 1px;
   text-underline-offset: 4px;
   transition:
@@ -1305,6 +938,7 @@
 }
 
 .quote {
+  margin-top: 4px;
   padding: 16px 18px 18px;
   background: var(--wash-2);
   border-top: 1px solid var(--rule);
@@ -1368,8 +1002,6 @@
   transition: border-color var(--tick) var(--ease);
 }
 
-/* A field's edge answers focus by turning ink, with no glow and no second
-   colour: the ring is for the keyboard, this is for the field. */
 .quote-field input:focus,
 .quote-field textarea:focus {
   border-color: var(--ink);
@@ -1420,77 +1052,31 @@
   color: var(--coral-deep);
 }
 
-/* ---------- Trust line, where their accreditations row sits ---------- */
+/* ---------- The dock: field, service line, keyboard ---------- */
 
-/* The hairline above it separates the answers from the line that accounts for
-   them, so it stays. The status line below carries no rule: it is a footnote to
-   this one, not another band. */
-.trust {
-  margin-top: 48px;
-  padding-top: 16px;
+/* A row of the shell, under the thread, never over it. The hairline above it is
+   the shelf the field sits on; the thread's own content stops at that line. */
+.composer-dock {
+  flex: none;
+  background: var(--surface);
   border-top: 1px solid var(--rule);
 }
 
-/* Two clauses, separated by a dot that trails the clause before it, so a wrap
-   never starts on a stranded separator. */
-.trust-line {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0 8px;
-  font-family: var(--mono);
-  font-size: 12px;
-  line-height: 1.6;
-  letter-spacing: 0.01em;
-  color: var(--muted);
-}
-
-.trust-line > span:not(:last-child)::after {
-  content: "·";
-  margin-left: 8px;
-  color: var(--hair-strong);
-}
-
-/* ---------- Composer: a field fixed to the bottom ---------- */
-
-/* The dock has no rule of its own. Text that scrolls under it dissolves over
-   36px instead of being sliced on a hard line, which is what made the bottom
-   of the opening look cut off. The mask is white paper fading out: the page
-   already has that ground, so this is an edge treatment, not a shadow. */
-.composer-dock {
-  position: fixed;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  z-index: 40;
-  background: var(--surface);
-  padding: 10px var(--gutter) max(10px, env(safe-area-inset-bottom));
-}
-
-.composer-dock::before {
-  content: "";
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 100%;
-  height: 36px;
-  background: linear-gradient(to bottom, rgba(255, 255, 255, 0), var(--surface));
-  pointer-events: none;
-}
-
-.composer,
-.composer-hint {
-  max-width: calc(var(--page) - var(--gutter) * 2);
+.dock-inner {
+  max-width: calc(var(--column) + var(--gutter) * 2);
   margin: 0 auto;
+  padding: 12px var(--gutter) max(10px, env(safe-area-inset-bottom));
 }
 
-/* A flat white field with a hairline that turns ink on focus. No wash, no glow:
+/* A flat white field with an edge that turns ink on focus. No wash, no glow:
    the edge is the whole states system, and it is the same edge as every other
    field on the page. */
 .composer {
   display: flex;
   align-items: flex-end;
   gap: 8px;
-  padding: 5px 5px 5px 14px;
+  min-width: 0;
+  padding: 4px 4px 4px 14px;
   background: var(--surface);
   border: 1px solid var(--rule-field);
   border-radius: var(--r-control);
@@ -1504,8 +1090,8 @@
 .composer textarea {
   flex: 1;
   min-width: 0;
-  max-height: 148px;
   min-height: 44px;
+  max-height: 148px;
   padding: 11px 0;
   border: 0;
   outline: none;
@@ -1516,6 +1102,14 @@
   line-height: 1.45;
   color: var(--body);
   overflow-y: auto;
+  /* A one-line field that is 1px taller than its text shows a full scrollbar
+     with arrow buttons; in a 44px field it reads as a broken stepper. The field
+     still scrolls when the question is longer than the cap. */
+  scrollbar-width: none;
+}
+
+.composer textarea::-webkit-scrollbar {
+  display: none;
 }
 
 .composer textarea::placeholder {
@@ -1526,8 +1120,10 @@
   color: var(--muted);
 }
 
-/* Their hero CTA: coral fill, white label. The fill is their --light-red for the
-   same reason as .button-solid: 4.77:1 with white, where #e85a4f is 3.05:1. */.composer-button {
+/* The action is a real control at rest, in coral-ink with white on it (4.77:1).
+   It is not dimmed for an empty field: with an empty field it puts the cursor
+   in the field, which is the only thing that can be done there. */
+.composer-ask {
   flex: none;
   display: inline-flex;
   align-items: center;
@@ -1544,7 +1140,7 @@
   transition: background-color var(--tick) var(--ease);
 }
 
-.composer-button:hover:not(:disabled) {
+.composer-ask:hover {
   background: var(--coral-deep);
 }
 
@@ -1554,20 +1150,8 @@
   transition: transform var(--tick) var(--ease);
 }
 
-.composer-button:hover:not(:disabled) .composer-arrow {
+.composer-ask:hover .composer-arrow {
   transform: translateX(2px);
-}
-
-/* Before anyone types, the action is still the action: solid coral, held at 60%
-   rather than turned into a pale outline. A pale coral wash with a coral border
-   read as disabled. */
-.composer-button:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-.composer-button:disabled:hover {
-  background: var(--coral-ink);
 }
 
 .composer-stop {
@@ -1577,7 +1161,7 @@
   font-size: 14px;
 }
 
-.composer-stop:hover:not(:disabled) {
+.composer-stop:hover {
   background: var(--wash-2);
   border-color: var(--ink);
 }
@@ -1585,116 +1169,108 @@
 .stop-icon {
   width: 11px;
   height: 11px;
-  color: var(--coral-ink);
+  color: var(--coral-deep);
 }
 
-.composer-hint {
-  margin-top: 7px;
-  font-size: 12px;
-  line-height: 1.5;
-  color: var(--muted);
-}
-
-kbd {
-  display: inline-block;
-  padding: 0 4px;
-  border: 1px solid var(--rule);
-  border-radius: 2px;
-  background: var(--wash);
-  font-family: var(--mono);
-  font-size: 10px;
-  letter-spacing: 0.02em;
-  color: var(--muted);
-}
-
-/* ---------- Footer ---------- */
-
-/* A footline, not a second section: the only rule at the bottom of the page is
-   the one above the trust line, so the status reads as a footnote to it rather
-   than as another band of furniture. */
-.foot {
-  margin-top: 18px;
-}
-
-.foot-line {
+/* Two captions on one line: what the service is doing on the left, how the
+   field works on the right. Both are records, so both are mono and small. */
+.dock-meta {
   display: flex;
-  align-items: center;
-  gap: 8px;
-  font-family: var(--mono);
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px 20px;
+  margin-top: 8px;
+  padding-left: 15px;
   font-size: 12px;
   line-height: 1.5;
   color: var(--muted);
+}
+
+.dock-status {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 7px;
+  min-width: 0;
 }
 
 .status-dot {
-  width: 6px;
-  height: 6px;
-  background: var(--hair-strong);
+  width: 5px;
+  height: 5px;
   flex: none;
+  background: var(--rule-field);
+  transform: translateY(-1px);
 }
 
 .status-ok {
   background: var(--coral);
 }
 
+/* A caption, not a control. The keys are set in the record voice with no box
+   around them: three pale chips in a row read as a second, broken input. */
+.composer-hint {
+  flex: none;
+  font-family: var(--sans);
+  white-space: nowrap;
+}
+
+.composer-hint kbd {
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  color: var(--ink);
+}
+
 /* ---------- Narrow screens ---------- */
 
-/* On a phone the label is dropped: the logo plus two actions already fill the
-   bar. The logo steps down to 104x52, the same 2:1 box, so neither action is
-   pushed off a 380px screen. Both header actions are mono and narrower there. */
 @media (max-width: 600px) {
+  .brand {
+    gap: 10px;
+  }
+
   .brand-sub {
+    font-size: 10px;
+    letter-spacing: 0.1em;
+  }
+
+  /* With a conversation open the bar carries the reset as well as the mark, and
+     at 390 the two would touch. The logo still says whose guide this is. */
+  .top[data-conv="true"] .brand-sub {
     display: none;
   }
 
   .brand-logo {
-    width: 104px;
-    height: 52px;
+    width: 92px;
+    height: 46px;
   }
 
-  .top-actions {
-    gap: 14px;
-  }
-
-  .top-new,
-  .top-link {
+  .top-new {
+    padding: 0 10px;
     font-size: 11px;
-    letter-spacing: 0.03em;
+    letter-spacing: 0.02em;
   }
 
-  .page {
-    padding: 24px var(--gutter) 40px;
+  .chips {
+    margin-top: 20px;
   }
 
-  .intro-title {
-    margin-top: 12px;
-  }
-
-  .docket {
-    margin-top: 26px;
-  }
-
-  .docket-note {
-    max-width: none;
-  }
-
-  .contents {
-    padding: 16px 16px 14px;
+  .ask {
+    max-width: 88%;
   }
 
   .turns {
-    gap: 40px;
-  }
-
-  .turn {
-    gap: 20px;
+    gap: 30px;
   }
 
   .composer-hint {
     display: none;
   }
 
-  .composer-button {
+  .dock-meta {
+    padding-left: 0;
+  }
+
+  .composer-ask {
     padding: 0 15px;
   }
 }
@@ -1704,7 +1280,7 @@ kbd {
 @keyframes rise {
   from {
     opacity: 0;
-    transform: translateY(7px);
+    transform: translateY(6px);
   }
   to {
     opacity: 1;
@@ -1712,18 +1288,8 @@ kbd {
   }
 }
 
-@keyframes rule {
-  from {
-    transform: scaleX(0);
-  }
-  to {
-    transform: scaleX(1);
-  }
-}
-
 /* Every animation is off under reduced motion, and every hover still answers:
-   it changes colour, but nothing slides or lifts. The citation still lights, it
-   just does not fade, and everything that rises is already in place. */
+   it changes colour, but nothing slides or lifts. */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -1734,20 +1300,8 @@ kbd {
     transition-duration: 0.001ms !important;
   }
 
-  .source.is-lit {
-    animation: none;
-    background: var(--coral-wash);
-  }
-
-  .prompt:hover .prompt-arrow,
-  .prompt:focus-visible .prompt-arrow,
-  .composer-button:hover:not(:disabled) .composer-arrow {
+  .composer-ask:hover .composer-arrow {
     transform: none;
-  }
-
-  .docket-cur,
-  .figure-cur {
-    bottom: calc(var(--figure-cap) * 1em);
   }
 }
 
@@ -1755,12 +1309,11 @@ kbd {
   .top,
   .composer-dock,
   .skip,
-  .trust,
   .answer-tools {
     display: none !important;
   }
 
   .sources {
-    position: static;
+    border-top: 0;
   }
 }

@@ -1,0 +1,530 @@
+/* ==========================================================================
+   Operator console at /admin/.
+
+   Same sheet as the public page: white ground, mono for anything that is a
+   record (labels, figures, dates, slugs), sans for anything read as a sentence.
+   Coral is only the primary action; every divider is a rule, never a card edge.
+
+   Every custom property below is written with a fallback so this page still
+   renders if a token in globals.css is renamed. Nothing here is imported by the
+   public page, and globals.css / ui.css are not modified.
+   ========================================================================== */
+
+.adm {
+  max-width: var(--page, 900px);
+  margin: 0 auto;
+  padding: 48px var(--gutter, 24px) 104px;
+  color: var(--body, #333333);
+  font-family: var(
+    --sans,
+    "Plex Sans",
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    Roboto,
+    Helvetica,
+    Arial,
+    sans-serif
+  );
+}
+
+/* The root layout renders a skip link written for the chat page ("Skip to the
+   question box", href="#composer"). This route has no composer, and the masthead
+   is the first thing on it, so the link points at nothing. Scoped to this route
+   with :has(); layout.tsx and globals.css stay untouched. */
+body:has(> .adm) > .skip {
+  display: none;
+}
+
+/* ---------- Masthead ---------- */
+
+.adm-mast {
+  padding-bottom: 20px;
+  border-bottom: 2px solid var(--rule-ink, #1f1f1f);
+}
+
+.adm-eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--mono, "Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace);
+  font-size: var(--t-label, 10.5px);
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  line-height: 1.4;
+  text-transform: uppercase;
+  color: var(--faint, #6a6a6a);
+}
+
+.adm-tick {
+  width: 6px;
+  height: 6px;
+  flex: none;
+  background: var(--coral, #e85a4f);
+}
+
+.adm-title {
+  margin-top: 0;
+  max-width: 22em;
+  font-size: var(--t-display, 32px);
+  font-weight: 600;
+  line-height: 1.12;
+  letter-spacing: -0.022em;
+  color: var(--ink, #222222);
+  text-wrap: pretty;
+}
+
+.adm-lede {
+  margin-top: 12px;
+  max-width: 62ch;
+  font-size: var(--t-lead, 17px);
+  line-height: 1.55;
+  color: var(--muted, #555555);
+}
+
+/* ---------- Shared text roles ---------- */
+
+.adm-label {
+  font-family: var(--mono, "Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace);
+  font-size: var(--t-label, 10.5px);
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  line-height: 1.4;
+  text-transform: uppercase;
+  color: var(--faint, #6a6a6a);
+}
+
+.adm-note {
+  margin-top: 10px;
+  max-width: 66ch;
+  font-size: var(--t-small, 13px);
+  line-height: 1.6;
+  color: var(--muted, #555555);
+}
+
+.adm-error {
+  margin-top: 12px;
+  max-width: 66ch;
+  font-size: var(--t-small, 13px);
+  line-height: 1.6;
+  color: var(--coral-deep, #95202e);
+}
+
+.adm-num,
+.adm-str {
+  font-family: var(--mono, "Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace);
+  font-size: var(--t-small, 13px);
+  font-variant-numeric: tabular-nums lining-nums;
+  text-align: right;
+  color: var(--ink, #222222);
+}
+
+.adm-num {
+  font-weight: 600;
+}
+
+.adm-str {
+  color: var(--body, #333333);
+}
+
+/* ---------- Token gate ---------- */
+
+.adm-gate {
+  margin-top: 36px;
+  padding-top: 20px;
+  border-top: 1px solid var(--rule, #e7e7e4);
+  max-width: 460px;
+}
+
+.adm-gate-title {
+  font-size: var(--t-title, 20px);
+  font-weight: 600;
+  line-height: 1.25;
+  color: var(--ink, #222222);
+}
+
+.adm-form {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  gap: 10px 12px;
+  margin-top: 20px;
+}
+
+.adm-form .adm-label {
+  grid-column: 1 / -1;
+}
+
+.adm-field {
+  min-height: 44px;
+  padding: 0 12px;
+  background: var(--surface, #ffffff);
+  border: 1px solid var(--rule-field, #b4b4b0);
+  border-radius: var(--r-control, 3px);
+  font-family: var(--mono, "Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace);
+  font-size: var(--t-small, 13px);
+  color: var(--ink, #222222);
+  transition:
+    border-color var(--tick, 160ms) var(--ease, cubic-bezier(0.16, 1, 0.3, 1)),
+    background-color var(--tick, 160ms) var(--ease, cubic-bezier(0.16, 1, 0.3, 1));
+}
+
+.adm-field:hover {
+  border-color: var(--hair-strong, #c4c4c4);
+}
+
+.adm-field:focus-visible {
+  outline: 2px solid var(--coral-ink, #c6474c);
+  outline-offset: 2px;
+  border-color: var(--rule-ink, #1f1f1f);
+}
+
+/* ---------- Buttons ---------- */
+
+.adm-primary,
+.adm-secondary,
+.adm-link {
+  font-family: var(--mono, "Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace);
+  font-size: var(--t-small, 13px);
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  border-radius: var(--r-control, 3px);
+  transition:
+    background-color var(--tick, 160ms) var(--ease, cubic-bezier(0.16, 1, 0.3, 1)),
+    border-color var(--tick, 160ms) var(--ease, cubic-bezier(0.16, 1, 0.3, 1)),
+    color var(--tick, 160ms) var(--ease, cubic-bezier(0.16, 1, 0.3, 1));
+}
+
+.adm-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0 20px;
+  background: var(--coral-ink, #c6474c);
+  border: 1px solid var(--coral-ink, #c6474c);
+  color: #ffffff;
+  white-space: nowrap;
+}
+
+.adm-primary:hover:not(:disabled) {
+  background: var(--coral-deep, #95202e);
+  border-color: var(--coral-deep, #95202e);
+}
+
+.adm-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0 18px;
+  background: var(--surface, #ffffff);
+  border: 1px solid var(--rule-field, #b4b4b0);
+  color: var(--ink, #222222);
+  white-space: nowrap;
+}
+
+.adm-secondary:hover:not(:disabled) {
+  border-color: var(--rule-ink, #1f1f1f);
+}
+
+.adm-primary:disabled,
+.adm-secondary:disabled {
+  background: var(--wash, #f5f5f5);
+  border-color: var(--rule, #e7e7e4);
+  color: var(--faint, #6a6a6a);
+  cursor: not-allowed;
+}
+
+.adm-link {
+  min-height: 32px;
+  color: var(--body, #333333);
+  text-decoration: underline;
+  text-decoration-color: var(--hair-strong, #c4c4c4);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 4px;
+}
+
+.adm-link:hover {
+  color: var(--coral-deep, #95202e);
+  text-decoration-color: var(--coral-deep, #95202e);
+}
+
+/* ---------- Connected bar ---------- */
+
+.adm-console {
+  margin-top: 20px;
+}
+
+.adm-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--rule, #e7e7e4);
+}
+
+.adm-bar-state {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--mono, "Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace);
+  font-size: var(--t-label, 10.5px);
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  line-height: 1.4;
+  text-transform: uppercase;
+  color: var(--faint, #6a6a6a);
+}
+
+.adm-dot {
+  width: 6px;
+  height: 6px;
+  flex: none;
+  background: var(--coral, #e85a4f);
+}
+
+/* ---------- Panels ---------- */
+
+.adm-panel {
+  margin-top: 44px;
+  padding-top: 18px;
+  border-top: 1px solid var(--rule, #e7e7e4);
+}
+
+/* The public corpus summary sits directly under the masthead's 2px rule, so it
+   opens without a second, weaker rule above it. */
+.adm-panel-public {
+  margin-top: 28px;
+  padding-top: 0;
+  border-top: 0;
+}
+
+.adm-panel-title {
+  margin-top: 8px;
+  font-size: var(--t-title, 20px);
+  font-weight: 600;
+  line-height: 1.25;
+  letter-spacing: -0.012em;
+  color: var(--ink, #222222);
+}
+
+.adm-sub {
+  margin-top: 28px;
+  font-family: var(--mono, "Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace);
+  font-size: var(--t-label, 10.5px);
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  line-height: 1.4;
+  text-transform: uppercase;
+  color: var(--faint, #6a6a6a);
+}
+
+/* Rows are a two-column table without a <table>: key left, figure right. */
+.adm-rows {
+  margin-top: 14px;
+}
+
+.adm-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: baseline;
+  gap: 16px;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--rule, #e7e7e4);
+}
+
+.adm-row:first-child {
+  border-top: 1px solid var(--rule, #e7e7e4);
+}
+
+.adm-row dt {
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--body, #333333);
+}
+
+.adm-changed {
+  margin-top: 20px;
+}
+
+.adm-slugs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+  margin-top: 8px;
+  font-family: var(--mono, "Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace);
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--body, #333333);
+}
+
+.adm-slugs li {
+  padding-right: 16px;
+  border-right: 1px solid var(--rule, #e7e7e4);
+}
+
+.adm-slugs li:last-child {
+  padding-right: 0;
+  border-right: 0;
+}
+
+/* ---------- Refresh actions ---------- */
+
+.adm-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin-top: 22px;
+}
+
+.adm-confirm {
+  margin-top: 18px;
+  padding: 16px 0 0;
+  border-top: 1px solid var(--rule, #e7e7e4);
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--body, #333333);
+}
+
+.adm-confirm .adm-actions {
+  margin-top: 14px;
+}
+
+.adm-runstate {
+  margin-top: 14px;
+  font-size: var(--t-small, 13px);
+  line-height: 1.6;
+  color: var(--muted, #555555);
+}
+
+.adm-runstate p {
+  max-width: 66ch;
+}
+
+/* ---------- Gaps table ---------- */
+
+.adm-table-wrap {
+  margin-top: 18px;
+  overflow-x: auto;
+}
+
+.adm-table {
+  width: 100%;
+  min-width: 620px;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.adm-table th {
+  padding: 0 16px 8px 0;
+  border-bottom: 1px solid var(--rule-ink, #1f1f1f);
+  font-family: var(--mono, "Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace);
+  font-size: var(--t-label, 10.5px);
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  line-height: 1.4;
+  text-transform: uppercase;
+  text-align: left;
+  white-space: nowrap;
+  color: var(--faint, #6a6a6a);
+}
+
+.adm-table td {
+  padding: 11px 16px 11px 0;
+  border-bottom: 1px solid var(--rule, #e7e7e4);
+  vertical-align: top;
+  line-height: 1.5;
+}
+
+.adm-table th:last-child,
+.adm-table td:last-child {
+  padding-right: 0;
+}
+
+.adm-table .num {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.adm-table td.num {
+  font-family: var(--mono, "Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums lining-nums;
+  color: var(--body, #333333);
+}
+
+.adm-table td.adm-strong {
+  font-weight: 600;
+  color: var(--ink, #222222);
+}
+
+.adm-q {
+  max-width: 34ch;
+  color: var(--body, #333333);
+  overflow-wrap: anywhere;
+}
+
+.adm-intent {
+  font-family: var(--mono, "Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace);
+  font-size: 12px;
+  letter-spacing: 0.02em;
+  color: var(--muted, #555555);
+  white-space: nowrap;
+}
+
+.adm-empty {
+  margin-top: 16px;
+  padding: 18px 0;
+  border-top: 1px solid var(--rule, #e7e7e4);
+  border-bottom: 1px solid var(--rule, #e7e7e4);
+  font-size: 14px;
+  color: var(--muted, #555555);
+}
+
+/* ---------- Error banner ---------- */
+
+.adm-banner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px 20px;
+  margin-top: 20px;
+  padding: 14px 16px;
+  background: var(--coral-wash, #fdefee);
+  border-left: 3px solid var(--coral-ink, #c6474c);
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--body, #333333);
+}
+
+/* ---------- Narrow screens ---------- */
+
+@media (max-width: 640px) {
+  .adm {
+    padding-top: 32px;
+    padding-bottom: 72px;
+  }
+
+  .adm-form {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .adm-form .adm-primary {
+    justify-self: stretch;
+  }
+
+  .adm-bar {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .adm-actions .adm-primary,
+  .adm-actions .adm-secondary {
+    width: 100%;
+  }
+}

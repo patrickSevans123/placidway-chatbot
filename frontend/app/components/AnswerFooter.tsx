@@ -61,14 +61,11 @@ export function AnswerFooter({
         </span>
       </div>
 
-      {/* A boundary answer has no page and no measured latency, so the whole
-          line is dropped rather than printed as "From 0 pages". */}
-      {(done.sources.length > 0 || done.latency_ms > 0) && (
+      {/* The page count is the disclosure's own label, one line below, so it is
+          not printed twice. A boundary answer has no measured latency and no
+          checked price, so the whole line is dropped rather than left empty. */}
+      {(done.latency_ms > 0 || done.prices_checked_at) && (
         <p className="provenance">
-          <span className="provenance-item">
-            From <span className="tabular">{done.sources.length}</span>{" "}
-            {done.sources.length === 1 ? "page" : "pages"}
-          </span>
           {done.latency_ms > 0 && (
             <span className="provenance-item">
               Answered in <span className="tabular">{seconds(done.latency_ms)}</span> s

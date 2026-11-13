@@ -1,31 +1,42 @@
 import { hostOf } from "../lib/markdown";
 import type { Source } from "../lib/types";
-import { Arrow } from "./Icons";
+import { Arrow, Chevron } from "./Icons";
 
-// The apparatus of the document: which pages the answer above is built from.
-// On a wide screen this is the margin column beside the prose, numbered, with a
-// hairline between notes and no box around them. On a phone it follows the
-// answer as the same numbered list. Each row is a real link to the page.
+// The apparatus of one answer, folded into a disclosure so a chat reply stays a
+// reply. The numbered glyphs in the prose are the citation; clicking one opens
+// this list and lights the row it points at, and the disclosure can also be
+// opened by hand. A native <details>, so the keyboard and the browser's own
+// find-in-page reach it without a listener.
 export function Sources({
   sources,
+  open,
+  onToggle,
   lit,
   onCite,
-  turnId,
 }: {
   sources: Source[];
+  open: boolean;
+  onToggle: (open: boolean) => void;
   lit: string | null;
   onCite: (sourceId: string) => void;
-  turnId: number;
 }) {
   if (!sources.length) return null;
 
   return (
-    <section className="sources" aria-labelledby={`sources-${turnId}`}>
-      <h3 className="sources-head" id={`sources-${turnId}`}>
-        {sources.length === 1
-          ? "The page this came from"
-          : `The ${sources.length} pages this came from`}
-      </h3>
+    <details
+      className="sources"
+      open={open}
+      onToggle={(event) => onToggle(event.currentTarget.open)}
+    >
+      <summary className="sources-summary">
+        <Chevron open={open} />
+        <span>Sources</span>
+        <span className="sources-count">
+          · <span className="tabular">{sources.length}</span>{" "}
+          {sources.length === 1 ? "page" : "pages"}
+        </span>
+      </summary>
+
       <ol className="source-list">
         {sources.map((source, i) => {
           const active = lit === source.id;
@@ -34,11 +45,12 @@ export function Sources({
               // The id is the target of the [n] links in the answer.
               key={source.id}
               id={`source-${source.id}`}
-              className={`source${active ? " is-lit" : ""}`}
+              className="source"
+              data-lit={active}
               aria-current={active ? "true" : undefined}
               ref={(node) => {
                 if (!node) return;
-                // A citation click scrolls the note into view once; the class
+                // A citation click brings the note into view once; the data
                 // change is what re-runs this for a second click on the same [n].
                 if (!active || node.dataset.seen === "1") return;
                 node.dataset.seen = "1";
@@ -48,11 +60,14 @@ export function Sources({
                   node.scrollIntoView({ block: "nearest", behavior: "smooth" });
                 }
               }}
-              onAnimationEnd={(event) => {
-                if (event.target === event.currentTarget) onCite("");
-              }}
             >
-              <a className="source-link" href={source.url} target="_blank" rel="noopener">
+              <a
+                className="source-link"
+                href={source.url}
+                target="_blank"
+                rel="noopener"
+                onClick={() => onCite(source.id)}
+              >
                 <span className="source-num tabular" aria-hidden="true">
                   {String(i + 1).padStart(2, "0")}
                 </span>
@@ -65,10 +80,9 @@ export function Sources({
                   <span className="source-meta">
                     <span className="source-type">{source.page_type}</span>
                     {/* The domain, never a shortened path: this package's slug is
-                        one unbreakable word 324px wide, so every shortening ended
-                        mid-word ("/Alte…"). The title above names the page and the
-                        link opens it; the whole address is in `title` on hover.
-                        Not read aloud, because the title is the link's name. */}
+                        one unbreakable word, so every shortening ended mid-word.
+                        The title above names the page and the link opens it; the
+                        whole address is in `title`. */}
                     <span className="source-url" title={source.url} aria-hidden="true">
                       {hostOf(source.url)}
                     </span>
@@ -79,6 +93,6 @@ export function Sources({
           );
         })}
       </ol>
-    </section>
+    </details>
   );
 }

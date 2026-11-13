@@ -2,17 +2,17 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { API_BASE, getHealth, postFeedback } from "../lib/api";
-import { PAGE_COUNT, PRICES_CHECKED } from "../lib/brand";
 import { ChatError, streamChat } from "../lib/stream";
 import type { Stage } from "../lib/types";
 import { Composer } from "./Composer";
-import { Contents } from "./Contents";
-import { EmptyState } from "./EmptyState";
+import { Opening } from "./EmptyState";
 import { Header } from "./Header";
 import { TurnView } from "./Turn";
 import type { HealthState, Turn } from "./conversation";
 
-const SESSION_KEY = "placidway.session_id";
+// The conversation is kept as one value, so the thread and the id the server
+// continues can never be restored out of step.
+const STORAGE_KEY = "placidway.chat.v1";
 
 export default function ChatSurface() {
   const [turns, setTurns] = useState<Turn[]>([]);
@@ -20,26 +20,68 @@ export default function ChatSurface() {
   const [busy, setBusy] = useState(false);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [health, setHealth] = useState<HealthState>({ state: "loading", pages: null });
-  const [lit, setLit] = useState<string | null>(null);
-  const [dockHeight, setDockHeight] = useState(0);
+  const [lit, setLit] = useState<{ turn: number; id: string } | null>(null);
+  // False until the stored conversation has been read, so the first render never
+  // writes an empty list over a real one.
+  const [ready, setReady] = useState(false);
 
   const abortRef = useRef<AbortController | null>(null);
   const nextId = useRef(1);
   const litTimer = useRef<number | null>(null);
   const tokenBuffer = useRef("");
   const tokenFrame = useRef<number | null>(null);
-  // Only follow the stream when the reader is already at the bottom. Set by the
-  // scroll listener, read by the token flush.
+  // The thread is the only scroll area. Follow the stream only while the reader
+  // is already at the end of it.
   const follow = useRef(true);
+  const threadRef = useRef<HTMLElement | null>(null);
 
+  // Restore the pair, or neither. A half-restored conversation is worse than an
+  // empty one: the server would answer a follow-up about a question that is not
+  // on screen.
   useEffect(() => {
+    let restored: { sessionId: string; turns: Turn[] } | null = null;
     try {
-      const saved = sessionStorage.getItem(SESSION_KEY);
-      if (saved) setSessionId(saved);
+      const raw = sessionStorage.getItem(STORAGE_KEY);
+      if (raw) {
+        const data = JSON.parse(raw) as { sessionId?: unknown; turns?: unknown };
+        if (typeof data?.sessionId === "string" && Array.isArray(data.turns)) {
+          const saved = data.turns.filter(isTurn).map(restoreTurn);
+          if (saved.length) restored = { sessionId: data.sessionId, turns: saved };
+        }
+      }
+    } catch {
+      restored = null;
+    }
+
+    if (restored) {
+      setSessionId(restored.sessionId);
+      setTurns(restored.turns);
+      nextId.current = restored.turns.reduce((max, turn) => Math.max(max, turn.id), 0) + 1;
+    } else {
+      try {
+        sessionStorage.removeItem(STORAGE_KEY);
+      } catch {
+        /* storage disabled: nothing to clear */
+      }
+    }
+    setReady(true);
+  }, []);
+
+  // Written when the answer settles, never mid-stream: a reload must not bring
+  // back half a sentence. The pair is written only when both halves exist.
+  useEffect(() => {
+    if (!ready) return;
+    if (turns.some((turn) => turn.status === "streaming")) return;
+    try {
+      if (!sessionId || turns.length === 0) {
+        sessionStorage.removeItem(STORAGE_KEY);
+      } else {
+        sessionStorage.setItem(STORAGE_KEY, JSON.stringify({ sessionId, turns }));
+      }
     } catch {
       /* storage disabled: the conversation still works in memory */
     }
-  }, []);
+  }, [ready, sessionId, turns]);
 
   useEffect(() => {
     const control = new AbortController();
@@ -53,34 +95,34 @@ export default function ChatSurface() {
   }, []);
 
   // A reader who scrolls up to read is left where they are until they come back
-  // down within 80px of the bottom.
+  // down within 80px of the end.
   useEffect(() => {
+    const el = threadRef.current;
+    if (!el) return;
     const onScroll = () => {
-      const at = window.innerHeight + window.scrollY;
-      follow.current = at >= document.documentElement.scrollHeight - 80;
+      follow.current = el.scrollHeight - el.scrollTop - el.clientHeight < 80;
     };
     onScroll();
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
-  }, []);
-
-  const saveSession = useCallback((id: string | null) => {
-    setSessionId(id);
-    try {
-      if (id) sessionStorage.setItem(SESSION_KEY, id);
-      else sessionStorage.removeItem(SESSION_KEY);
-    } catch {
-      /* ignore */
-    }
-  }, []);
-
-  const patch = useCallback((id: number, next: Partial<Turn>) => {
-    setTurns((list) => list.map((turn) => (turn.id === id ? { ...turn, ...next } : turn)));
+    el.addEventListener("scroll", onScroll, { passive: true });
+    return () => el.removeEventListener("scroll", onScroll);
   }, []);
 
   const scrollToEnd = useCallback(() => {
-    if (!follow.current) return;
-    window.scrollTo({ top: document.documentElement.scrollHeight, behavior: "auto" });
+    const el = threadRef.current;
+    if (!el || !follow.current) return;
+    el.scrollTop = el.scrollHeight;
+  }, []);
+
+  // Follow the answer, but only from a thread the reader is already at the end
+  // of. This is an effect rather than a call beside setTurns: the browser has
+  // the new paragraph by the time it runs, so the scroll lands on the real
+  // bottom instead of on the height of the previous render.
+  useEffect(() => {
+    scrollToEnd();
+  }, [turns, scrollToEnd]);
+
+  const patch = useCallback((id: number, next: Partial<Turn>) => {
+    setTurns((list) => list.map((turn) => (turn.id === id ? { ...turn, ...next } : turn)));
   }, []);
 
   const ask = useCallback(
@@ -89,6 +131,9 @@ export default function ChatSurface() {
       if (!text || busy) return;
 
       const id = nextId.current++;
+      // Sending is a deliberate move to the end, so following resumes here even
+      // if the reader had scrolled back through an earlier answer.
+      follow.current = true;
       setTurns((list) => [
         ...list,
         {
@@ -104,8 +149,6 @@ export default function ChatSurface() {
         },
       ]);
       setBusy(true);
-      // Asking is a deliberate move to the end, so following resumes here.
-      follow.current = true;
 
       const control = new AbortController();
       abortRef.current = control;
@@ -132,7 +175,6 @@ export default function ChatSurface() {
           setTurns((list) =>
             list.map((turn) => (turn.id === id ? { ...turn, text: turn.text + chunk } : turn)),
           );
-          scrollToEnd();
         });
       };
 
@@ -155,12 +197,11 @@ export default function ChatSurface() {
               setTurns((list) =>
                 list.map((turn) => (turn.id === id ? { ...turn, text: answer } : turn)),
               );
-              scrollToEnd();
             },
             onDone: (done) => {
               finished = true;
               const pending = flushFrame();
-              saveSession(done.session_id);
+              setSessionId(done.session_id);
               setTurns((list) =>
                 list.map((turn) =>
                   turn.id === id
@@ -175,7 +216,6 @@ export default function ChatSurface() {
                     : turn,
                 ),
               );
-              scrollToEnd();
             },
           },
           control.signal,
@@ -199,7 +239,7 @@ export default function ChatSurface() {
         setBusy(false);
       }
     },
-    [busy, sessionId, patch, saveSession, scrollToEnd],
+    [busy, sessionId, patch],
   );
 
   const stop = useCallback(() => abortRef.current?.abort(), []);
@@ -216,18 +256,19 @@ export default function ChatSurface() {
     [sessionId, patch],
   );
 
-  // Clicking a [n] scrolls the source card into view and lights it. Passing ""
-  // clears a lit card, which the card calls when its own pulse ends.
-  const cite = useCallback((sourceId: string) => {
+  // Clicking a [n] lights the page it points at, in the answer's own list. It is
+  // also what unfolds that list, so the light is never scheduled into a closed
+  // disclosure. Passing "" clears it.
+  const cite = useCallback((turnId: number, sourceId: string) => {
     if (litTimer.current) window.clearTimeout(litTimer.current);
     if (!sourceId) {
       setLit(null);
       return;
     }
     setLit(null);
-    // Two frames, so clicking the same citation twice restarts the pulse.
+    // Two frames, so clicking the same citation twice restarts the light.
     window.requestAnimationFrame(() => {
-      setLit(sourceId);
+      setLit({ turn: turnId, id: sourceId });
       litTimer.current = window.setTimeout(() => setLit(null), 2400);
     });
   }, []);
@@ -241,71 +282,52 @@ export default function ChatSurface() {
     [],
   );
 
-  const newQuestion = useCallback(() => {
+  const newConversation = useCallback(() => {
     abortRef.current?.abort();
-    saveSession(null);
+    setSessionId(null);
     setTurns([]);
     setValue("");
     setLit(null);
     follow.current = true;
-    window.scrollTo({ top: 0, behavior: "auto" });
-  }, [saveSession]);
+    threadRef.current?.scrollTo({ top: 0, behavior: "auto" });
+  }, []);
 
   const empty = turns.length === 0;
+  const opening = empty || !ready;
 
   return (
-    <div className="app" style={{ paddingBottom: dockHeight, "--dock": `${dockHeight}px` } as React.CSSProperties}>
-      <Header onNew={newQuestion} showNew={!empty} />
+    <div className="shell">
+      <Header onNew={empty ? undefined : newConversation} />
 
-      <main className="page" id="main">
-        <h1 className="sr-only">PlacidWay treatment guide: cancer treatment at ITC in Tijuana</h1>
-
-        <div className={`layout${empty ? " layout-index" : ""}`}>
-          <div className="column">
-            {empty ? (
-              <section className="intro" aria-labelledby="empty-title">
-                <p className="eyebrow">
-                  <span className="eyebrow-tick" aria-hidden="true" />
-                  ITC Immunity Therapy Center · Tijuana, Mexico
-                </p>
-                <h2 className="intro-title" id="empty-title">
-                  What cancer treatment at ITC costs.
-                </h2>
-                <p className="intro-lede">
-                  Ask about a price, a programme, the doctors or the trip. Answers are written only
-                  from the seven PlacidWay pages each one cites.
-                </p>
-                <EmptyState onPick={(q) => void ask(q)} />
-              </section>
-            ) : (
-              <section aria-label="Answers" className="turns">
-                <h2 className="sr-only">Answers</h2>
-                {turns.map((turn) => (
-                  <TurnView
-                    key={turn.id}
-                    turn={turn}
-                    lit={lit}
-                    onCite={cite}
-                    onRetry={() => void ask(turn.question)}
-                    onRate={(rating) => void rate(turn, rating)}
-                    sessionId={sessionId}
-                  />
-                ))}
-              </section>
-            )}
-
-            <TrustLine health={health} />
-          </div>
-
-          {empty && <Contents />}
+      <main className="thread" id="main" ref={threadRef}>
+        <div className="thread-inner">
+          {opening ? (
+            <Opening onPick={(q) => void ask(q)} />
+          ) : (
+            <section className="turns" aria-label="Conversation">
+              <h1 className="sr-only">
+                PlacidWay treatment guide: answers about cancer treatment at ITC in Tijuana
+              </h1>
+              {turns.map((turn) => (
+                <TurnView
+                  key={turn.id}
+                  turn={turn}
+                  litId={lit?.turn === turn.id ? lit.id : null}
+                  onCite={(sourceId) => cite(turn.id, sourceId)}
+                  onRetry={() => void ask(turn.question)}
+                  onRate={(rating) => void rate(turn, rating)}
+                  sessionId={sessionId}
+                />
+              ))}
+            </section>
+          )}
         </div>
-
-        <Footer health={health} />
       </main>
 
       <Composer
         value={value}
         busy={busy}
+        health={health}
         onChange={setValue}
         onSend={() => {
           const q = value;
@@ -313,7 +335,7 @@ export default function ChatSurface() {
           void ask(q);
         }}
         onStop={stop}
-        onHeight={setDockHeight}
+        autoFocus={ready && empty}
       />
 
       <p className="sr-only" role="status" aria-live="polite">
@@ -323,36 +345,39 @@ export default function ChatSurface() {
   );
 }
 
-// Where their accreditations row sits: the honest version of a trust cue.
-// One line, not a strip of four figures, so it reads as a caption rather than a
-// second page furniture.
-function TrustLine({ health }: { health: HealthState }) {
+const STATUSES = ["streaming", "done", "stopped", "error", "limited", "offline"] as const;
+
+// A stored turn is untrusted input: anything that is not the shape the view
+// expects is dropped rather than trusted into a render.
+function isTurn(value: unknown): value is Partial<Turn> & { id: number; question: string } {
+  if (!value || typeof value !== "object") return false;
+  const turn = value as Record<string, unknown>;
   return (
-    <section className="trust" aria-label="About these answers">
-      <p className="trust-line">
-        <span>Answers come only from these {PAGE_COUNT} PlacidWay pages</span>
-        <span>
-          Prices checked <span className="tabular">{PRICES_CHECKED}</span>
-        </span>
-      </p>
-    </section>
+    typeof turn.id === "number" &&
+    Number.isFinite(turn.id) &&
+    typeof turn.question === "string" &&
+    typeof turn.text === "string" &&
+    typeof turn.status === "string" &&
+    (STATUSES as readonly string[]).includes(turn.status)
   );
 }
 
-function Footer({ health }: { health: HealthState }) {
-  const line =
-    health.state === "loading"
-      ? "Checking the answer service…"
-      : health.state === "down"
-        ? "The answer service is not responding right now."
-        : "Answer service ready";
+// A turn that was still arriving when the tab was closed is shown as stopped:
+// the server is not going to finish a stream nobody is listening to.
+function restoreTurn(saved: Partial<Turn> & { id: number; question: string }): Turn {
+  const done = saved.done ?? null;
+  const status: Turn["status"] =
+    saved.status === "streaming" ? "stopped" : saved.status === "done" && !done ? "error" : saved.status!;
 
-  return (
-    <footer className="foot">
-      <p className="foot-line">
-        <span className={`status-dot${health.state === "ok" ? " status-ok" : ""}`} aria-hidden="true" />
-        <span className="foot-status">{line}</span>
-      </p>
-    </footer>
-  );
+  return {
+    id: saved.id,
+    question: saved.question,
+    text: typeof saved.text === "string" ? saved.text : "",
+    stage: saved.stage === "retrieving" || saved.stage === "drafting" || saved.stage === "verifying" ? saved.stage : "drafting",
+    status,
+    done,
+    retryAfter: typeof saved.retryAfter === "number" ? saved.retryAfter : null,
+    rating: saved.rating === 1 || saved.rating === -1 ? saved.rating : null,
+    ratingFailed: saved.ratingFailed === true,
+  };
 }

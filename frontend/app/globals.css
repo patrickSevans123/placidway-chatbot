@@ -1,12 +1,14 @@
 /* ==========================================================================
-   PlacidWay treatment guide: the typed sheet.
+   PlacidWay treatment guide: the chat.
 
-   Two type roles and one accent. IBM Plex Mono carries everything that is
-   record-keeping (labels, numerals, dates, page numbers); IBM Plex Sans carries
-   everything that is read as a sentence. Coral is never a field: it is a tick, a
-   citation glyph, the Ask fill and the edge of a lit note.
+   One conversation column on white paper, a bar above it and a question dock
+   below it. The thread is the only thing that scrolls. Two type roles: IBM Plex
+   Sans for anything read as a sentence, IBM Plex Mono for anything that is a
+   record (labels, counts, figures, dates). Coral is a mark only: a square, a
+   citation glyph, the absence mark. It is never a field except the one filled
+   button, and never small text on a tinted ground.
 
-   The palette below was measured on placidway.com: computed text and background
+   The palette was measured on placidway.com: computed text and background
    colours over a rendered page at 1280, plus the colours declared in their own
    CSS variables. DESIGN.md carries the table of what each one was read from.
    Component styles live in ui.css.
@@ -48,66 +50,74 @@
 }
 
 :root {
-  /* Coral is the one accent. It carries the logo artwork, the primary button and
-     citation marks. #e85a4f on white is 3.05:1, so it is never used for small
-     text; coral-ink (4.77:1) is the text-weight version of the same colour. */
+  /* #e85a4f on white is 3.05:1, so it never carries text; --coral-ink (4.77) is
+     the text-weight version of the same colour, and --coral-deep (7.6) is the
+     one coral that is readable on the rail's wash. */
   --coral: #e85a4f; /* their rendered accent and the logo artwork */
   --coral-ink: #c6474c; /* their --light-red */
   --coral-deep: #95202e; /* their --dark-red */
-  --coral-wash: #fdefee; /* their rendered coral wash */
-  --coral-line: #f6d5d2; /* derived: #e85a4f at 28% over white, disabled edge */
+  --coral-wash: #fdefee; /* their rendered coral wash: a mark's ground, not a field */
+  --coral-line: #f6d5d2; /* derived: #e85a4f at 28% over white */
 
   --surface: #ffffff; /* their page background and theme-color */
-  --wash: #f5f5f5;
+  --wash: #f5f5f5; /* the rail's ground: their light section background */
   --wash-2: #f8f8f8;
 
-  --ink: #222222; /* headings and the price figure */
+  --ink: #222222; /* headings, figures, the question line */
   --body: #333333; /* body text, their most used colour */
-  --muted: #555555; /* 7.4:1: secondary text, qualifiers, notes */
-  --faint: #6a6a6a; /* 5.6:1: their #777 darkened past AA, the lightest grey
-                       allowed to carry text. #777 itself is 4.48:1. */
+  --muted: #555555; /* 7.4:1 on white, 6.8:1 on --wash */
+  --faint: #6a6a6a; /* 5.6:1 on white, 4.96:1 on --wash: the lightest grey
+                       allowed to carry text. Their #777 is 4.48:1 and is not. */
 
-  /* Two rules, and only two. Every divider is --rule. The single heavier line
-     is the 2px --rule-ink above the docket, which the components set by name.
-     --rule-field is the one exception to the colour rule and not a divider: a
-     field's own edge has to be seen before it is touched (visible: 1.48:1). */
-  --rule: #e7e7e4; /* every divider in the document */
-  --rule-ink: #1f1f1f; /* the docket's top rule, at 2px, and the ink a field's
-                          edge takes on focus */
-  --rule-field: #b4b4b0; /* a field's edge at rest */
+  /* Three rules. --rule divides white paper, --rule-wash divides the rail,
+     --rule-ink at 2px is the one structural rule in each region. --rule-field
+     is not a divider: a field's edge has to be seen before it is touched. */
+  --rule: #e7e7e4;
+  --rule-wash: #dedede;
+  --rule-ink: #1f1f1f;
+  --rule-field: #b4b4b0;
 
-  --hair: #e9ebeb; /* older token, kept so nothing that still names it goes
-                       missing; new work uses --rule */
+  /* Kept so nothing that still names the older tokens goes missing; new work
+     uses --rule, --rule-wash and --rule-field. */
+  --hair: #e9ebeb;
   --hair-strong: #c4c4c4;
   --hair-wash: #e2e2e2;
 
   --r-control: 3px; /* fields and buttons: a document has near-square corners */
-  --r-card: 3px;
+  /* The one rounded thing on the page. A question is spoken, not printed, so it
+     gets the only corner radius that says "bubble"; every record keeps 3px. */
+  --r-bubble: 12px;
 
   --sans: "Plex Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica,
     Arial, sans-serif;
   --mono: "Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  --font: var(--sans);
 
-  /* One sheet, not a viewport: the document is 900px wide and centred, so the
-     measure and the margin column can both be fixed. */
-  --page: 900px;
+  /* The conversation column. 660px is about 85 characters at 16px: wide enough
+     that an answer reads as a reply rather than a narrow article, tight enough
+     that the eye does not lose the line between one citation and the next. */
+  --column: 660px;
+
+  /* Kept for the other screens that read this token, including admin.css, whose
+     container is var(--page, 900px). The chat sizes itself with --column. */
+  --page: 1088px;
+  --read-col: 720px;
+  --rail-col: 320px;
+  --col-gap: 48px;
+  --head: 64px;
   --gutter: 24px;
-  --read: 64ch;
-  --margin-col: 236px;
-  --margin-gap: 56px;
+  /* 66ch at 16px, so prose stays inside the 65-75ch reading range inside the
+     720px column. Structural blocks (docket, starter rows) use the column. */
+  --measure: 612px;
 
-  --t-figure: clamp(34px, 4.4vw, 46px);
-  --t-display: clamp(27px, 3.1vw, 36px);
+  --t-figure: clamp(34px, 3.4vw, 46px);
+  --t-display: clamp(30px, 3vw, 38px);
   --t-title: 20px;
   --t-lead: 17px;
   --t-body: 16px;
   --t-small: 13px;
-  --t-label: 10.5px; /* the only label size; tracking .14em lives in .label */
-  /* Plex Mono at 46px measures 0.698em from baseline to cap line, so the gap
-     from the digit baseline up to its cap line is 32.1px. That is the size of
-     the offset that stands USD's own baseline on the figure's cap line, and
-     takes the guesswork out of "smaller type beside a big number". */
+  --t-label: 11px;
+  /* Plex Mono at 46px measures 0.698em from baseline to cap line. That offset
+     stands the unit's baseline on the figure's cap line at any figure size. */
   --figure-cap: 0.698;
   --ease: cubic-bezier(0.16, 1, 0.3, 1);
   --tick: 160ms;
@@ -122,12 +132,13 @@
 html {
   -webkit-text-size-adjust: 100%;
   scroll-behavior: smooth;
-  /* Anchors land above the fixed composer, whose real height the shell writes
-     into --dock. 88px is the fallback before the first measurement. The top
-     padding clears the 71px header plus a 28px gap. */
-  scroll-padding-bottom: calc(var(--dock, 88px) + 16px);
-  scroll-padding-top: 98px;
+  /* The page's own scrollbar is part of the page: thin, square, quiet. */
+  scrollbar-width: thin;
+  scrollbar-color: #c4c4c4 transparent;
 }
+
+/* The page itself never scrolls: the thread inside the shell is the scroll
+   area, so no gutter has to be reserved here. */
 
 @media (prefers-reduced-motion: reduce) {
   html {
@@ -135,6 +146,9 @@ html {
   }
 }
 
+/* Clip, not hidden: `overflow: hidden` on one axis turns the other into `auto`
+   and makes the body a possible scroll container. `clip` refuses overflow
+   without owning a scrollport, so the window stays the only scroller. */
 body {
   margin: 0;
   background: var(--surface);
@@ -144,7 +158,7 @@ body {
   line-height: 1.62;
   font-synthesis-weight: none;
   -webkit-font-smoothing: antialiased;
-  overflow-x: hidden;
+  overflow-x: clip;
 }
 
 h1,
@@ -185,18 +199,41 @@ svg {
   display: block;
 }
 
-.tabular {
-  font-variant-numeric: tabular-nums lining-nums;
+/* The browser's own surfaces are part of the page. Selected text takes the
+   coral wash with ink on it (5.4:1); the caret is coral-ink, not black. */
+::selection {
+  background: var(--coral-wash);
+  color: var(--ink);
 }
 
-/* Every transition on this page is 160ms on --ease, so a pointer gets the same
-   answer from a row, a button, a link and a field. */
-.tick {
-  transition:
-    color var(--tick) var(--ease),
-    background-color var(--tick) var(--ease),
-    border-color var(--tick) var(--ease),
-    text-decoration-color var(--tick) var(--ease);
+textarea,
+input {
+  caret-color: var(--coral-ink);
+}
+
+/* Thin, square, quiet scrollbar on the thread and on the one long text field,
+   so the page still reads as paper when there is more in it than fits. */
+.thread,
+.quote-field textarea {
+  scrollbar-width: thin;
+  scrollbar-color: #c4c4c4 transparent;
+}
+
+.thread::-webkit-scrollbar,
+.quote-field textarea::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+.thread::-webkit-scrollbar-thumb,
+.quote-field textarea::-webkit-scrollbar-thumb {
+  background: #c4c4c4;
+  border: 3px solid transparent;
+  background-clip: content-box;
+}
+
+.tabular {
+  font-variant-numeric: tabular-nums lining-nums;
 }
 
 .sr-only {
@@ -228,7 +265,7 @@ svg {
   color: #fff;
   font-size: var(--t-small);
   font-weight: 600;
-  border-radius: var(--r-card);
+  border-radius: var(--r-control);
   transform: translateY(-200%);
 }
 
@@ -237,14 +274,61 @@ svg {
   transform: none;
 }
 
+/* ---------- The shell: bar, thread, dock ---------- */
+
+/* Three rows, no page scroll. The bar and the dock are rows, so neither can sit
+   over a line of the conversation, and the thread is the only element in the
+   document that owns an overflow. Using dvh rather than vh keeps the dock on
+   screen while a phone's address bar is showing. */
+.shell {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  height: 100dvh;
+  min-height: 0;
+}
+
+/* The one scroll area in the app. `overscroll-behavior: contain` stops a hard
+   flick at the end of the thread from moving the page behind it. */
+.thread {
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.thread-inner {
+  /* Positioned, so a visually hidden child is clipped by the thread instead of
+     extending the document's scroll area. */
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: calc(var(--column) + var(--gutter) * 2);
+  min-height: 100%;
+  margin: 0 auto;
+  padding: 24px var(--gutter) 20px;
+}
+
 @media (max-width: 600px) {
   :root {
     --gutter: 16px;
+  }
+
+  .thread-inner {
+    padding-top: 16px;
+    padding-bottom: 12px;
   }
 }
 
 @media print {
   body {
     background: #fff;
+  }
+
+  .shell {
+    height: auto;
+  }
+
+  .thread {
+    overflow: visible;
   }
 }

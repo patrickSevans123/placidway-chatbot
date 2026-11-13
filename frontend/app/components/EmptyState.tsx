@@ -1,57 +1,44 @@
-import { PRICES_CHECKED, PROMPTS, TIERS } from "../lib/brand";
-import { Arrow } from "./Icons";
+import { CORPUS, PRICES_CHECKED, PROMPTS } from "../lib/brand";
 
-// The opening is the dossier's first page, not a starter grid: the priced
-// schedule is the largest thing on it, then three questions set as rows. The
-// headline and the lede above live in ChatSurface.
-export function EmptyState({ onPick }: { onPick: (q: string) => void }) {
+// Before the first question: a greeting, and three questions this guide can
+// actually answer, each of which sends the moment it is clicked. The corpus is
+// named once, underneath, so the boundary of what can be answered is on screen
+// before anything is typed.
+export function Opening({ onPick }: { onPick: (q: string) => void }) {
   return (
-    <div className="empty">
-      <section className="docket" aria-labelledby="docket-title">
-        <p className="docket-head" id="docket-title">
-          Programme · total for three weeks
-        </p>
+    <section className="opening" aria-labelledby="opening-title">
+      <h1 className="opening-title" id="opening-title">
+        Ask about treatment in Tijuana.
+      </h1>
+      <p className="opening-lede">
+        Prices, what each programme includes, the doctors, or the trip. Answers come only from the
+        seven PlacidWay pages they cite, and they are general information rather than medical
+        advice.
+      </p>
 
-        <dl className="docket-list">
-          {TIERS.map((tier) => (
-            <div className="docket-row" key={tier.label}>
-              <dt className="docket-term">{tier.label}</dt>
-              <dd className="docket-value">
-                <span className="docket-amount tabular">{tier.amount}</span>
-                <span className="docket-cur">USD</span>
-              </dd>
-            </div>
-          ))}
-        </dl>
+      <div className="chips">
+        {PROMPTS.map((prompt) => (
+          <button
+            key={prompt.question}
+            type="button"
+            className="chip"
+            onClick={() => onPick(prompt.question)}
+          >
+            <span className="chip-mark" aria-hidden="true" />
+            <span>{prompt.question}</span>
+          </button>
+        ))}
+      </div>
 
-        <p className="docket-note">
-          Add-ons are priced separately. Listed on the ITC package pages and checked{" "}
-          <span className="tabular">{PRICES_CHECKED}</span>. Confirm the price with the clinic
-          before you pay.
-        </p>
-      </section>
-
-      <section className="starters" aria-labelledby="starters-title">
-        <h3 className="starters-head" id="starters-title">
-          Start with a question
-        </h3>
-        <ul className="prompt-list">
-          {PROMPTS.map((prompt, i) => (
-            <li key={prompt.question}>
-              <button type="button" className="prompt" onClick={() => onPick(prompt.question)}>
-                <span className="prompt-num tabular" aria-hidden="true">
-                  {String(i + 1).padStart(2, "0")}
-                </span>
-                <span className="prompt-body">
-                  <span className="prompt-q">{prompt.question}</span>
-                  <span className="prompt-note">{prompt.note}</span>
-                </span>
-                <Arrow className="prompt-arrow" />
-              </button>
-            </li>
-          ))}
-        </ul>
-      </section>
-    </div>
+      <p className="opening-note">
+        <span className="tabular">{CORPUS.pages}</span> pages
+        <span className="dot" />
+        <span className="tabular">{CORPUS.passages}</span> passages
+        <span className="dot" />
+        <span className="tabular">{CORPUS.prices}</span> prices
+        <span className="dot" />
+        Prices checked <span className="tabular">{PRICES_CHECKED}</span>
+      </p>
+    </section>
   );
 }

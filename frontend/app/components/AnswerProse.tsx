@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { Fragment } from "react";
 import { parseBlocks, parseInline, type Inline } from "../lib/markdown";
 import type { Source } from "../lib/types";
 
@@ -91,7 +92,21 @@ function InlineParts({
           const source = sources[part.n - 1];
           // parseInline already refuses a marker with no page behind it.
           if (!source) return null;
-          return <CiteLink key={i} n={part.n} source={source} onCite={onCite} />;
+          // The model writes [1][3]. Two raised glyphs with nothing between them
+          // read as "13", so a comma is set between neighbours in the same
+          // sentence. The comma is not a link: each marker keeps its own target
+          // and its own focus ring.
+          const after = parts[i - 1]?.kind === "cite";
+          return (
+            <Fragment key={i}>
+              {after && (
+                <span className="cite-sep" aria-hidden="true">
+                  ,
+                </span>
+              )}
+              <CiteLink n={part.n} source={source} onCite={onCite} />
+            </Fragment>
+          );
         }
         return <span key={i}>{part.text}</span>;
       })}

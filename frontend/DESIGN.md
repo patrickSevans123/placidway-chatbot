@@ -114,6 +114,10 @@ All caps text always carries `letter-spacing`. Figures are `tabular-nums`.
 
 ## Layout
 
+**Superseded by "Chat surface" below, kept as the record of the first build.** The
+composer is no longer fixed, there is no contents column, no margin notes and no
+opening docket; the answer is a block in a thread, not a two-column spread.
+
 - **Header.** 71px with their 2:1 logo at 123x62 (104x52 under 600), a hairline
   rule, a quiet "Treatment guide", and one link out. No second bar.
 - **Opening.** Two columns at ≥1040: dossier on the left, contents on the right.
@@ -166,6 +170,10 @@ Read off the built page at 1440 and 390. The direction did not change: the same
 dossier, the same tokens, one accent. What changed is how much of each system is
 on screen at once.
 
+The token and control decisions below still hold. Two rows describe the shell as it
+was before the chat rewrite: the margin note, and the fades that hid the edges of a
+fixed composer. Neither exists now.
+
 | What was wrong | What changed |
 |---|---|
 | Six hairlines of one weight plus a 2px ink rule per screen, so nothing ranked | Exactly two: `--rule` (#e7e7e4) for every divider, `--rule-ink` (#1f1f1f) at 2px for the docket's top rule only. Field edges use `--rule-field` (#b4b4b0), which is not a divider. Rules were deleted where they separated one-line blocks: the docket caption, the starters heading, the contents label, the contents footer, the sources heading, the figure, the answer footer. |
@@ -189,9 +197,126 @@ pass covered.
 | The composer placeholder repeated the lede sentence word for word | "Type a question". The lede already says what can be asked. |
 | Separators were drawn before each item, so a wrapped line could begin on a stranded dot | `provenance` and the trust line draw the dot after the clause before it, and the trust line is two spans so it wraps as clauses, not mid-phrase. |
 
-## Files
+## Chat surface - redesign of 13 Nov 2026 (current)
 
-`ChatSurface` (state and shell) · `Turn` · `AnswerProse` · `PricePanel` ·
-`AnswerFooter` · `Sources` · `States` · `Composer` · `QuoteForm` · `EmptyState`
-(docket and questions) · `Contents` (the seven pages) · `Header` · `Icons`, with
-`lib/{brand,lead,stream,price,markdown}`.
+**Supersedes the answer desk below.** The palette provenance, the two type roles,
+rules-not-cards and coral-as-a-mark are kept exactly. What is replaced is the
+anatomy: the page is a conversation, not a document. The first version of this
+redesign was a two-column desk with a standing evidence rail; it was rejected
+because it did not read as a chatbot, and the rail is what caused it.
+
+### Shell
+
+`.shell` is a `100dvh` grid of three rows: the bar (`auto`), the thread (`1fr`),
+the dock (`auto`). Nothing else scrolls.
+
+- `.thread` is the **only** element between the conversation and the document
+  with a computed `overflow-y` that is not `visible`. The bar and the dock are
+  rows of the same grid, so neither can cover a line of an answer, and the last
+  element of the last turn always sits above the top edge of the composer.
+- `body { overflow-x: clip }`, never `hidden`: `hidden` on one axis turns the
+  other into `auto` and makes the body a second scroll container.
+- The conversation column is `--column: 660px`, about 85 characters at 16px.
+  `--page: 1088px` stays defined because `admin.css` reads it as
+  `var(--page, 900px)`; the chat does not use it.
+
+This replaced a nested pane that clamped the document to the viewport. Measured
+before that fix, on an answered turn at 1440x900: the document was 900px tall and
+could not scroll, `.read` clipped 174px of the answer, and 150px of the price
+record was reachable only through a 4px inner scrollbar.
+
+### Type and colour
+
+IBM Plex Sans for anything read as a sentence, IBM Plex Mono for anything read as
+a record (labels, counts, figures, dates, the service line). Coral `#c6474c` is a
+mark only: a 5px square, a citation glyph, the column rule beside a disclaimer. It
+is a field only on the one filled button.
+
+Rules, not card borders: hairlines (`--rule`) divide, a 2px `--rule-ink` line marks
+the one structural break in a region, and fields carry a `--rule-field` edge that
+turns ink on focus.
+
+Radii: `--r-control` 3px on every field, button and chip. `--r-bubble` 12px belongs
+to the question alone.
+
+### The turn
+
+- The question is a bubble, right-aligned, `--wash` ground, 12px radius, its
+  bottom-right corner pulled back to 3px. It is the only filled, rounded object on
+  the page: the visitor is speaking.
+- The answer is a full-width block on white. It carries citations, so it cannot be
+  a bubble.
+- Answer order: prose, the checked line, the disclaimer when `show_disclaimer` is
+  true, the copy/rating row and provenance, the `Sources - N pages` disclosure, the
+  package price record, and the quote form when the answer asks for one.
+- Consecutive citation markers are separated by a comma in the same raised mono
+  (`1,3`). Without it the model's `[1][3]` rendered as "13", which reads as
+  footnote thirteen; three adjacent markers rendered as "321".
+- The price record renders only when that answer's own text states an amount, using
+  the three shapes `app/guard.py` polices (currency prefix, currency suffix, bare
+  thousands-grouped number). It is an appendix to a price answer, not a fixture on
+  every answer.
+
+### Sources
+
+A native `<details>` whose `open` is mirrored from state. Clicking a superscript
+citation both lights the page row and forces the disclosure open, so the light is
+never scheduled into a closed box. The summary is also a control in its own right:
+the reader can open the list without touching a citation.
+
+### Persistence
+
+`sessionStorage["placidway.chat.v1"]` holds `{sessionId, turns}` as one value,
+written when an answer settles and removed when both halves are gone. Restore
+either takes both or clears the key; a turn that was still streaming when the tab
+closed is restored as stopped. "New conversation" clears both. Keeping the id but
+not the turns, as an earlier build did, meant a follow-up was answered from a
+conversation the reader could not see.
+
+### The empty screen
+
+A greeting, one sentence naming the boundary (general information, not medical
+advice), three questions stacked as full-width rows that send on a single click,
+and one mono line with the corpus counts and the date the prices were checked. The
+composer is focused on arrival and its placeholder names what can be asked without
+repeating the greeting.
+
+### Removed in this pass, and why
+
+| Pattern | Reason |
+|---|---|
+| The seven-page evidence rail | A standing corpus panel beside the conversation is what made the page read as a document. The same information now lives in the per-answer disclosure and the empty screen's count line |
+| The opening price docket | The price record travels with the answer that needs it |
+| The permanent footer disclaimer | It repeated one line on every answer, which the brief forbids; the disclaimer is now per answer and driven by `show_disclaimer` |
+| The fixed composer | It covered starter rows and forced a nested scroller. The dock is a grid row, so it cannot |
+| Eyebrow above the headline, `01`-`07` page numbering | Kickers and numbers that encode no sequence |
+| `lib/price.ts` and the parsed price | It extrapolated figures out of model prose. Deleted; the record prints the corpus's own two tiers and links the page |
+
+### Measured after the rebuild
+
+At 1440x900 and 390x844 on a thread with one answered procedure question: exactly
+one scroll container (the thread); thread 732/732 at 1440 and 1304/676 at 390 with
+`scrollTop` driven to the end on send; the last element of the turn at 694 against a
+composer top of 809; document `scrollWidth` equal to `clientWidth` at both widths.
+The disclaimer renders in a `procedure` answer and not in a `cost` answer.
+
+### Operations route
+
+`/admin/` is a second static route, token-gated at the browser. The admin token is
+typed by the operator, held in `sessionStorage`, and never enters the bundle, a URL
+or a log line, because the backend protects those endpoints and the public page must
+carry no secret. It reads `/api/health` without a token to show the corpus before
+connecting, then unlocks three panels: the corpus and its last refresh with a run
+control, the questions the bot could not answer grouped by question text, and the
+session totals.
+
+### Files
+
+`ChatSurface` (state, shell, persistence) -> `Turn` -> `AnswerProse` -> `PricePanel`
+-> `AnswerFooter` -> `Sources` -> `States` -> `Composer` -> `QuoteForm` ->
+`EmptyState` -> `Header`, with `lib/{brand,lead,stream,markdown,money,types}`.
+The operations route adds `admin/page.tsx`, `admin/admin.css` and `lib/admin.ts`.
+Deleted across both passes: `Contents.tsx`, `EvidenceRail.tsx`, `lib/price.ts`.
+
+Tokens in `app/globals.css`, components in `app/ui.css`, route-local styles in
+`app/admin/admin.css`. Self-hosted Plex only; no new dependency.

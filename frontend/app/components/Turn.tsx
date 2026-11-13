@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { STAGE_TEXT, type VisibleStage } from "../lib/brand";
-import { extractPrice, withoutPriceSentence } from "../lib/price";
+import { statesAmount } from "../lib/money";
 import type { DonePayload, Source } from "../lib/types";
 import { AnswerProse, StreamingText } from "./AnswerProse";
 import { AnswerFooter } from "./AnswerFooter";
@@ -12,20 +12,20 @@ import type { Turn } from "./conversation";
 
 const STAGES: VisibleStage[] = ["retrieving", "drafting"];
 
-// One question and everything the page says about it. No bubble: the question
-// is a numbered line and the answer flows as document prose, which is what this
-// is. On a wide screen the article is two columns — the text, and the cited
-// pages in the margin beside it.
+// One question and everything the page says about it. The question is a bubble
+// on the right, because it is the visitor speaking; the answer is a column of
+// printed text, because it carries citations, a sources disclosure, a price
+// record and a form.
 export function TurnView({
   turn,
-  lit,
+  litId,
   onCite,
   onRetry,
   onRate,
   sessionId,
 }: {
   turn: Turn;
-  lit: string | null;
+  litId: string | null;
   onCite: (sourceId: string) => void;
   onRetry: () => void;
   onRate: (rating: 1 | -1) => void;
@@ -35,6 +35,10 @@ export function TurnView({
   // a refusal, a rate limit, and a normal answer. Its open state lives here so
   // one turn never shows two forms.
   const [quoteOpen, setQuoteOpen] = useState(false);
+  // The pages stay folded until something asks for them: a citation click, or
+  // the reader's own click on the summary.
+  const [sourcesOpen, setSourcesOpen] = useState(false);
+
   const quote = (
     <QuoteForm
       open={quoteOpen}
@@ -45,8 +49,6 @@ export function TurnView({
   );
 
   const done = turn.status === "done" ? turn.done : null;
-  // The sources are rendered by the article, not by the answer body, so they can
-  // sit in the margin column beside the prose rather than under it.
   const sources: Source[] =
     done && done.grounded && !(done.intent === "error" && (done.sources ?? []).length === 0)
       ? Array.isArray(done.sources)
@@ -54,16 +56,21 @@ export function TurnView({
         : []
       : [];
 
+  // A citation click both lights its page and unfolds the list it lives in: with
+  // no rail beside the column, the note under the answer is the only place the
+  // light can be seen.
+  const cite = (sourceId: string) => {
+    setSourcesOpen(true);
+    onCite(sourceId);
+  };
+
   return (
     <article className="turn" aria-labelledby={`q-${turn.id}`}>
-      <div className="turn-body">
-        <p className="turn-question" id={`q-${turn.id}`}>
-          <span className="turn-num tabular" aria-hidden="true">
-            {String(turn.id).padStart(2, "0")}
-          </span>
-          <span className="turn-question-text">{turn.question}</span>
-        </p>
+      <h2 className="ask" id={`q-${turn.id}`}>
+        {turn.question}
+      </h2>
 
+      <div className="reply">
         {turn.status === "streaming" && <Streaming turn={turn} />}
         {turn.status === "stopped" && <StoppedNotice onRetry={onRetry} />}
         {turn.status === "error" && <FailedNotice onRetry={onRetry} offline={false} />}
@@ -77,18 +84,17 @@ export function TurnView({
           <Finished
             turn={turn}
             done={turn.done}
-            onCite={onCite}
+            sources={sources}
+            litId={litId}
+            sourcesOpen={sourcesOpen}
+            onToggleSources={setSourcesOpen}
+            onCite={cite}
             onRetry={onRetry}
             onRate={onRate}
             quote={quote}
-            quoteOpen={quoteOpen}
           />
         )}
       </div>
-
-      {sources.length > 0 && (
-        <Sources sources={sources} lit={lit} onCite={onCite} turnId={turn.id} />
-      )}
     </article>
   );
 }
@@ -118,23 +124,26 @@ function Streaming({ turn }: { turn: Turn }) {
 function Finished({
   turn,
   done,
+  sources,
+  litId,
+  sourcesOpen,
+  onToggleSources,
   onCite,
   onRetry,
   onRate,
   quote,
-  quoteOpen,
 }: {
   turn: Turn;
   done: DonePayload;
+  sources: Source[];
+  litId: string | null;
+  sourcesOpen: boolean;
+  onToggleSources: (open: boolean) => void;
   onCite: (sourceId: string) => void;
   onRetry: () => void;
   onRate: (rating: 1 | -1) => void;
   quote: React.ReactNode;
-  quoteOpen: boolean;
 }) {
-  const [bodyOpen, setBodyOpen] = useState(true);
-  const sources: Source[] = Array.isArray(done.sources) ? done.sources : [];
-
   // `intent: "error"` with no pages is the backend saying its own generation
   // failed. That is not the same as the pages not covering the question.
   if (done.intent === "error" && sources.length === 0) {
@@ -174,36 +183,17 @@ function Finished({
     return (
       <>
         <Refusal answer={done.answer} />
-        {showQuote && quote}
         <AnswerFooter turn={turn} done={done} onRate={onRate} />
+        {showQuote && quote}
       </>
     );
   }
 
-  // Derived from the finished, grounded text, never stored: the panel can then
-  // never disagree with the prose it was lifted from.
-  const price = extractPrice(done.answer);
-  const priceSource = price?.cite ? (sources[price.cite - 1] ?? null) : null;
-  // The panel states the figure, so the sentence it was lifted from is cut from
-  // the prose below. A sentence holding a second price is kept whole.
-  const rest = price ? withoutPriceSentence(done.answer, price) : done.answer;
-
   return (
     <>
-      {price && (
-        <PricePanel
-          price={price}
-          source={priceSource}
-          onCite={onCite}
-          bodyOpen={bodyOpen}
-          hasBody={rest.trim().length > 0}
-          onToggle={() => setBodyOpen((open) => !open)}
-        />
-      )}
-
-      {rest.trim() && (!price || bodyOpen) && (
-        <AnswerProse markdown={rest} sources={sources} onCite={onCite} />
-      )}
+      {/* The body is the markdown the API returned, whole. Every figure keeps
+          the sentence the model wrote it in, next to the page it cited. */}
+      <AnswerProse markdown={done.answer} sources={sources} onCite={onCite} />
 
       {/* `replace` fires on nearly every answer, because the guard collapses
           repeated pages and renumbers the citations. It is not a signal that a
@@ -214,7 +204,34 @@ function Finished({
         This answer was checked against the pages before it was shown.
       </p>
 
+      {/* The boundary travels with the answer that needs it, and only while the
+          API asks for it. A permanent line under every reply is the pattern this
+          replaces. */}
+      {done.show_disclaimer && (
+        <p className="disclaimer">
+          <strong>General information, not medical advice.</strong> Talk to a doctor about your own
+          case before you decide on treatment.
+        </p>
+      )}
+
       <AnswerFooter turn={turn} done={done} onRate={onRate} />
+
+      {sources.length > 0 && (
+        <Sources
+          sources={sources}
+          open={sourcesOpen}
+          onToggle={onToggleSources}
+          lit={litId}
+          onCite={onCite}
+        />
+      )}
+
+      {/* The record only appears under an answer that states a figure. On "who
+          are the doctors" or a recovery-time question the two package prices are
+          numbers the answer never mentions, and printing them reads as an
+          answer to a question nobody asked. */}
+      {statesAmount(done.answer) && <PricePanel turnId={turn.id} />}
+
       {showQuote && quote}
     </>
   );

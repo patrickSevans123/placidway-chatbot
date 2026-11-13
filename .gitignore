@@ -17,3 +17,6 @@ node_modules/
 frontend/.next/
 frontend/out/
 *.tsbuildinfo
+
+# Design-tool scratch space, not part of the deliverable.
+frontend/.impeccable/
