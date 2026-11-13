@@ -1,0 +1,15 @@
+[Unit]
+Description=Daily PlacidWay knowledge base refresh
+
+[Timer]
+# 04:17 with up to 30 minutes of jitter: the refresh makes seven outbound
+# requests to placidway.com, and a fixed minute on the hour is the pattern a
+# polite crawler avoids. Persistent=true runs the missed job after a reboot
+# instead of waiting a full day.
+OnCalendar=*-*-* 04:17:00
+RandomizedDelaySec=30m
+Persistent=true
+Unit=placidway-refresh.service
+
+[Install]
+WantedBy=timers.target

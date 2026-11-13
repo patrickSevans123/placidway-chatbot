@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { STAGE_TEXT, type VisibleStage } from "../lib/brand";
+import { PACKAGE_PAGE, STAGE_TEXT, type VisibleStage } from "../lib/brand";
 import { statesAmount } from "../lib/money";
 import type { DonePayload, Source } from "../lib/types";
 import { AnswerProse, StreamingText } from "./AnswerProse";
@@ -226,11 +226,14 @@ function Finished({
         />
       )}
 
-      {/* The record only appears under an answer that states a figure. On "who
-          are the doctors" or a recovery-time question the two package prices are
-          numbers the answer never mentions, and printing them reads as an
-          answer to a question nobody asked. */}
-      {statesAmount(done.answer) && <PricePanel turnId={turn.id} />}
+      {/* The record only appears under an answer that states a figure and cites
+          the page the record is printed on. On "who are the doctors" or a
+          recovery-time question the two package prices are numbers the answer
+          never mentions; on an adrenal price question they would be the wrong
+          package's prices, printed under a note naming a different page. */}
+      {statesAmount(done.answer) && sources.some((source) => source.url === PACKAGE_PAGE.url) && (
+        <PricePanel turnId={turn.id} />
+      )}
 
       {showQuote && quote}
     </>

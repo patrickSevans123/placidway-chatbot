@@ -1,0 +1,14 @@
+[Unit]
+Description=PlacidWay knowledge base refresh
+Documentation=https://github.com/patrickSevans123/placidway-chatbot
+After=docker.service network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+# The container reads this file too, so the token is defined once. Leave
+# ADMIN_TOKEN empty to disable the admin endpoints; this unit then fails with a
+# 503 and the timer records a failed run rather than silently doing nothing.
+EnvironmentFile=/opt/placidway/.env
+ExecStart=/usr/bin/curl -fsS -m 300 -X POST http://127.0.0.1:8099/api/admin/refresh -H "X-Admin-Token: ${ADMIN_TOKEN}"
+TimeoutStartSec=360

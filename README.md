@@ -45,14 +45,14 @@ first eight being the brief's eight test-question types.
 | Grounded answers with sources | `app/guard.py` fails an answer that cites a page it was not given or states a figure absent from the evidence, and `app/answer.py` regenerates once before refusing. Every answer carries source cards with the real URL. |
 | Honest "I don't know" | `app/retrieve.py` gates on coverage (`MIN_RETRIEVAL_SCORE`), and the prompt's refusal path ends in the free-quote link. Cases 5, 10, 11, 13 and 20 in the results file are refusals. |
 | Cost questions | The guard rejects any amount without a currency; price rows carry the page's own context ("out-patient program", "starting from"), and the UI prints the figure with a quiet qualifier, as their package page does. |
-| Simple chat UI | `frontend/` — a Next.js static export served at `/`. Type a question, watch it stream, click a citation to reach its source. |
-| Refresh | `POST /api/admin/refresh` for a manual run, plus `placidway-refresh.timer` daily on the host. Refusals are logged to `unanswered` so content gaps are visible. |
+| Simple chat UI | `frontend/` - a Next.js static export served at `/`. A conversation thread, the visitor's turn as a bubble, a composer docked at the bottom, and three starters that send on one click. Type a question, watch it stream, click a citation to open the page it came from. `/admin/` is the operator view. |
+| Refresh | `POST /api/admin/refresh` for a manual run, plus `placidway-refresh.timer` daily on the host (units in [`deploy/systemd/`](deploy/systemd)). `/admin/` runs it with the admin token and shows the result. Refusals are logged to `unanswered`. |
 | Live deployment | <https://placidway.patricksamuel.ninja>, container restart policy `unless-stopped`, tunnel and refresh timer both `enabled`. |
 | Answers in the user's language | `app/intents.py` detects Spanish and Arabic, searches in English, and answers in the question's language. Cases 9 and 12. |
 | Follow-up questions | Chat history is replayed from `sessions`/`messages`; cases 4 and 19 depend on it. |
-| Short disclaimer when relevant | `show_disclaimer` is set per answer rather than printed on every one; the prompt explicitly forbids repeating it. |
+| Short disclaimer when relevant | `show_disclaimer` is set per answer in `app/answer.py` and rendered only on that answer, never printed on every one. True for `medical_advice` and `procedure`, false on a refusal, and the prompt forbids repeating it. |
 | Lead capture | `POST /api/lead` stores name, email and message in SQLite; the form posts there, and a failure is reported to the reader rather than swallowed. |
-| Logging unanswerable questions | `GET /api/admin/unanswered` (admin token) lists the questions the bot could not ground, with intent and confidence. |
+| Logging unanswerable questions | `GET /api/admin/unanswered` (admin token) lists the questions the bot could not ground, with intent, confidence and timestamp; `/admin/` groups them by question text so the same gap appears once. |
 
 `docs/CODE_WALK.md` is the review route: ten sections in the order a reviewer
 would ask about them, each with the question it answers and the failure it is
@@ -305,6 +305,11 @@ systemctl list-timers placidway-refresh.timer
 journalctl -u placidway-refresh.service -n 20
 ```
 
+The two unit files are committed in [`deploy/systemd/`](deploy/systemd). Copy them to
+`/etc/systemd/system/`, then `systemctl enable --now placidway-refresh.timer`. The unit reads
+`ADMIN_TOKEN` from `/opt/placidway/.env`, the same file the container reads, so the token is defined
+once.
+
 `/api/health` reports `refresh.last_checked`, `refresh.last_changed`, `refresh.last_result` and
 `refresh.changed_pages`, so a quiet day is distinguishable from a broken one.
 
@@ -418,6 +423,13 @@ cloudflared tunnel route dns <tunnel-name> placidway.example.com
 The container binds to `127.0.0.1` only; the tunnel is the public entry point. `docker compose ps`
 and `curl localhost:8099/api/health` are the two checks that matter after a deploy.
 
+On the live host the compose project directory is `/opt/placidway`. `.env` and the `runtime/` volume
+sit there and survive a rebuild. `docker compose up -d --build` re-creates the container, which is
+the intended deploy: the corpus is baked into the image, the database is not.
+
+The build copies `frontend/` into a Node stage and runs `npm run build` there, so no Node reaches the
+runtime image; the export is served as static files by the Python app.
+
 Two operational notes learned the hard way:
 
 - **Restarting `cloudflared` drops any SSH session that runs through the same tunnel.** Reconnect
@@ -488,3 +500,18 @@ points at rather than on the commit.
   cannot summarise what is said in it.
 - **Single process, in-memory index.** Fine for this corpus and this traffic. A larger corpus would
   need a real vector store and a shared cache.
+- **Embeddings are rebuilt when the container starts.** `embeddings.npy` is not on the volume, so a
+  recreated container calls the embedding API for all 183 chunks once (about a second, seven calls).
+  If that call fails the app keeps serving on BM25 alone and says so: `/api/health` reports
+  `dense_retrieval: false` and the log warns `dense retrieval unavailable; BM25-only`. Writing the
+  file to the volume would remove the call, at the cost of one more thing to invalidate on a corpus
+  change.
+- **The public host answers a bare Python user agent with 403.** Cloudflare in front of the live URL
+  returns `403` and `error code: 1010` for `Python-urllib/3.x`, so a test script using `urllib` or
+  `requests` defaults is blocked before it reaches the app. A browser user agent passes, and so does
+  `curl`. This is the proxy's policy, not the app's: calling the container directly on
+  `127.0.0.1:8099` has no such rule.
+- **The unanswered log records every ungrounded answer, including ones that later answer correctly.**
+  The row is written whenever the guard or the coverage gate rejects an answer, so a question that a
+  retry does answer still leaves a row behind. The admin view groups by question text, which makes the
+  noise readable, but read the log as "answers that were refused", not "content that is missing".
