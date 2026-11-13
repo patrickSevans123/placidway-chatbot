@@ -20,3 +20,6 @@ frontend/out/
 
 # Design-tool scratch space, not part of the deliverable.
 frontend/.impeccable/
+
+# Written by tests/brief_live.py; output, not source.
+brief-test-results.json
